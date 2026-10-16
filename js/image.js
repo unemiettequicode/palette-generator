@@ -314,6 +314,13 @@ var ImageCouleurs = (function () {
     };
   }
 
+  // Écarts [secondaire, tertiaire] d'une harmonie nommée, comme les calcule palette.js
+  // (l'analogue suit la direction de l'accent : voir Palette.ficheDepuisParametres).
+  function ecartsDeLHarmonie(harmonie, ecartAccent) {
+    if (harmonie === "analogue") return [ecartAccent / 2, -ecartAccent / 3];
+    return Palette.ECARTS_HARMONIE[harmonie];
+  }
+
   // Traduit le résultat de analyser() en paramètres pour Palette.ficheDepuisParametres().
   function parametresPalette(analyse) {
     // Image noir et blanc : pas de teinte. On fait une palette de gris
@@ -337,9 +344,17 @@ var ImageCouleurs = (function () {
       ecart = estUnJaune(analyse.teinteDominante + 30) ? -30 : 30;
     }
 
+    // Un jaune en secondaire (le ton moyen le plus sombre) virerait au kaki :
+    // on l'échange avec la tertiaire, plus claire. Sinon l'harmonie garde son nom.
+    var harmonie = choisirHarmonie(Math.abs(ecart));
+    var ecarts = ecartsDeLHarmonie(harmonie, ecart);
+    if (estUnJaune(analyse.teinteDominante + ecarts[0]) && !estUnJaune(analyse.teinteDominante + ecarts[1])) {
+      harmonie = [ecarts[1], ecarts[0]];
+    }
+
     return {
       teinte: analyse.teinteDominante,
-      harmonie: choisirHarmonie(Math.abs(ecart)),
+      harmonie: harmonie,
       saturation: analyse.saturationMoyenne,
       ecartAccent: ecart,   // la secondaire de l'image colore l'accent
       nom: "Image importée",

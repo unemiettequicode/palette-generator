@@ -241,7 +241,8 @@ var Palette = (function () {
 
   return {
     generer: generer,
-    ficheDepuisParametres: ficheDepuisParametres
+    ficheDepuisParametres: ficheDepuisParametres,
+    ECARTS_HARMONIE: ECARTS_HARMONIE   // lu par image.js (placement des jaunes)
   };
 
 })();

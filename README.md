@@ -27,7 +27,9 @@ sans dépendance et sans étape de construction (build).
   (de -180° à +180°), toujours à partir de la palette de base.
 - **Dégradé mesh avec grain** (canvas 2D), avec un curseur d'intensité du grain.
 - **Exports** : PNG du moodboard, PNG du dégradé en 1080×1920, variables CSS
-  (+ dégradé en `radial-gradient`), JSON.
+  (+ dégradé en `radial-gradient`), JSON. Les fichiers sont nommés
+  `mc_` + un nom au choix (`noname` par défaut), par exemple
+  `mc_noname_palette.png`, `mc_noname_degrade.png`, `mc_noname.css`.
 - **Mode clair / sombre**, mémorisé dans le navigateur.
 
 

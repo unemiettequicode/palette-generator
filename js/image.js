@@ -7,9 +7,14 @@
    2. On lit un pixel sur PAS_ECHANTILLON et on le convertit en HSL
       (avec colors.js).
    3. On range les teintes par "familles" de 15° sur le cercle
-      chromatique (0-15°, 15-30°…) et on compte chaque famille.
-   4. On renvoie la teinte dominante, une teinte secondaire et la
-      saturation moyenne de l'image.
+      chromatique (0-15°, 15-30°…). Pour chaque famille on note le nombre
+      de pixels, leur saturation et leur luminosité moyennes.
+   4. On regroupe les familles voisines (moins de 25° d'écart) en "blocs"
+      de couleur : la peau, le brun et l'orange forment ainsi UN bloc.
+   5. On classe les blocs par POIDS VISUEL (pixels x saturation : un vert
+      vif compte plus qu'un brun terne) et on garde les 4 premiers.
+   6. Pour chaque bloc, la "pipette" relève la vraie couleur moyenne :
+      teinte, saturation, luminosité et HEX.
 
    Les pixels presque noirs ou presque blancs sont ignorés pour la
    teinte : ils n'en ont pas vraiment, et fausseraient le résultat.
@@ -24,8 +29,9 @@ var ImageCouleurs = (function () {
   var LUMINOSITE_MIN = 8;          // en dessous : presque noir, ignoré pour la teinte
   var LUMINOSITE_MAX = 92;         // au-dessus : presque blanc, ignoré pour la teinte
   var SATURATION_MIN = 8;          // en dessous : gris, teinte non significative
-  var ECART_MIN_SECONDAIRE = 30;   // la secondaire doit être au moins à 30° de la dominante…
-  var PART_MIN_SECONDAIRE = 0.05;  // … et représenter au moins 5 % des pixels colorés
+  var NOMBRE_TEINTES = 4;          // nombre de blocs de couleur retenus
+  var ECART_MIN_TEINTES = 25;      // rayon d'un bloc : deux blocs retenus sont au moins à 25° l'un de l'autre
+  var PART_MIN_TEINTE = 0.03;      // un bloc doit peser au moins 3 % du poids visuel total
 
 
   /* ---------- 1. Charger l'image ---------- */
@@ -75,7 +81,13 @@ var ImageCouleurs = (function () {
     var nombreDeFamilles = 360 / LARGEUR_FAMILLE;   // 24 familles
     var familles = [];
     for (var f = 0; f < nombreDeFamilles; f++) {
-      familles.push({ debut: f * LARGEUR_FAMILLE, nombre: 0, sommeTeintes: 0 });
+      familles.push({
+        debut: f * LARGEUR_FAMILLE,
+        nombre: 0,
+        sommeTeintes: 0,
+        sommeSaturations: 0,
+        sommeLuminosites: 0
+      });
     }
 
     var sommeSaturations = 0;
@@ -96,6 +108,8 @@ var ImageCouleurs = (function () {
       var famille = familles[Math.floor(hsl.h / LARGEUR_FAMILLE) % nombreDeFamilles];
       famille.nombre++;
       famille.sommeTeintes += hsl.h;
+      famille.sommeSaturations += hsl.s;
+      famille.sommeLuminosites += hsl.l;
     }
 
     return {
@@ -107,73 +121,110 @@ var ImageCouleurs = (function () {
   }
 
 
-  /* ---------- 3. Choisir dominante et secondaire ---------- */
+  /* ---------- 3. Regrouper en blocs et relever les couleurs ---------- */
 
   // Teinte moyenne des pixels d'une famille (plus précise que le début de la tranche).
   function teinteDeFamille(famille) {
     return famille.sommeTeintes / famille.nombre;
   }
 
-  function choisirTeintes(comptage) {
-    // Familles triées de la plus fréquente à la moins fréquente
-    var triees = comptage.familles
-      .filter(function (famille) { return famille.nombre > 0; })
-      .sort(function (a, b) { return b.nombre - a.nombre; });
-
-    if (triees.length === 0) {
-      // Image en noir et blanc (ou presque) : aucune teinte significative
-      return { dominante: null, secondaire: null };
-    }
-
-    var dominante = teinteDeFamille(triees[0]);
-
-    // La secondaire : la famille suivante la plus fréquente qui est vraiment
-    // DIFFÉRENTE de la dominante (au moins 30° d'écart) et assez présente.
-    // Sinon (image presque monochrome), on prend simplement la 2e famille,
-    // souvent une voisine : la palette restera analogue.
-    var secondaire = null;
-    for (var i = 1; i < triees.length; i++) {
-      var teinte = teinteDeFamille(triees[i]);
-      var part = triees[i].nombre / comptage.pixelsColores;
-      if (ecartDeTeinte(teinte, dominante) >= ECART_MIN_SECONDAIRE && part >= PART_MIN_SECONDAIRE) {
-        secondaire = teinte;
-        break;
-      }
-    }
-    if (secondaire === null) {
-      secondaire = triees.length > 1 ? teinteDeFamille(triees[1]) : dominante;
-    }
-
-    return { dominante: dominante, secondaire: secondaire, triees: triees };
+  // Poids visuel d'une famille : nombre de pixels x saturation moyenne.
+  // Une petite zone très colorée pèse plus qu'une grande zone terne.
+  function poidsDeFamille(famille) {
+    return famille.sommeSaturations;   // = somme des saturations de chaque pixel
   }
 
+  // Teinte moyenne de plusieurs familles. On passe par des flèches (cos / sin)
+  // car le cercle boucle : la moyenne de 350° et 10° doit donner 0°, pas 180°.
+  function teinteMoyenneDesFamilles(familles) {
+    var x = 0;
+    var y = 0;
+    familles.forEach(function (famille) {
+      var angle = teinteDeFamille(famille) * Math.PI / 180;
+      x += famille.nombre * Math.cos(angle);
+      y += famille.nombre * Math.sin(angle);
+    });
+    return Couleurs.normaliserTeinte(Math.atan2(y, x) * 180 / Math.PI);
+  }
+
+  // La "pipette" : résume un bloc de familles en UNE vraie couleur de l'image
+  // (teinte, saturation et luminosité moyennes des pixels du bloc).
+  function releverCouleur(bloc, poidsTotal) {
+    var nombre = 0;
+    var sommeSaturations = 0;
+    var sommeLuminosites = 0;
+    bloc.forEach(function (famille) {
+      nombre += famille.nombre;
+      sommeSaturations += famille.sommeSaturations;
+      sommeLuminosites += famille.sommeLuminosites;
+    });
+
+    var couleur = {
+      h: teinteMoyenneDesFamilles(bloc),
+      s: sommeSaturations / nombre,
+      l: sommeLuminosites / nombre
+    };
+    return {
+      teinte: couleur.h,
+      saturation: couleur.s,
+      luminosite: couleur.l,
+      hex: Couleurs.hslVersHex(couleur),
+      part: sommeSaturations / poidsTotal   // part du poids visuel total (0 à 1)
+    };
+  }
+
+  // Choisit les blocs de couleur les plus présents, du plus lourd au plus léger.
+  function choisirTeintes(comptage) {
+    var libres = comptage.familles
+      .filter(function (famille) { return famille.nombre > 0; })
+      .sort(function (a, b) { return poidsDeFamille(b) - poidsDeFamille(a); });
+
+    var poidsTotal = libres.reduce(function (somme, famille) {
+      return somme + poidsDeFamille(famille);
+    }, 0);
+
+    var teintes = [];
+    while (libres.length > 0 && teintes.length < NOMBRE_TEINTES) {
+      var pic = libres[0];   // la famille la plus lourde qui reste
+
+      // Le bloc : le pic + toutes les familles voisines (moins de 25° d'écart).
+      var bloc = libres.filter(function (famille) {
+        return ecartDeTeinte(teinteDeFamille(famille), teinteDeFamille(pic)) < ECART_MIN_TEINTES;
+      });
+      libres = libres.filter(function (famille) { return bloc.indexOf(famille) === -1; });
+
+      // Un bloc trop discret est écarté (on juge le bloc ENTIER, pas une seule tranche),
+      // sauf le tout premier : même une image presque grise a une dominante.
+      var poidsBloc = bloc.reduce(function (somme, famille) { return somme + poidsDeFamille(famille); }, 0);
+      if (teintes.length > 0 && poidsBloc / poidsTotal < PART_MIN_TEINTE) continue;
+
+      teintes.push(releverCouleur(bloc, poidsTotal));
+    }
+    return teintes;
+  }
 
   /* ---------- Fonction principale ---------- */
 
   // Analyse un fichier image. Renvoie une promesse de :
   // {
-  //   teinteDominante:   0-360, ou null si l'image n'a pas de couleur
-  //   teinteSecondaire:  0-360, ou null
+  //   teintes:           jusqu'à 4 couleurs relevées dans l'image, de la plus présente
+  //                      à la moins présente : { teinte, saturation, luminosite, hex, part }
+  //                      (tableau vide si l'image n'a aucune couleur : noir et blanc)
+  //   teinteDominante:   teinte de la 1re couleur (0-360), ou null
+  //   teinteSecondaire:  teinte de la 2e couleur (la dominante si l'image n'en a qu'une), ou null
   //   saturationMoyenne: 0-100
-  //   familles:          les 5 familles les plus fréquentes (pour vérifier)
   // }
   function analyser(fichier) {
     return chargerImage(fichier).then(function (image) {
       var comptage = analyserPixels(lirePixels(image));
       var teintes = choisirTeintes(comptage);
 
-      var principales = (teintes.triees || []).slice(0, 5).map(function (famille) {
-        return {
-          tranche: famille.debut + "-" + (famille.debut + LARGEUR_FAMILLE) + "°",
-          part: Math.round(100 * famille.nombre / comptage.pixelsColores) + " %"
-        };
-      });
-
       return {
-        teinteDominante: teintes.dominante,
-        teinteSecondaire: teintes.secondaire,
-        saturationMoyenne: comptage.saturationMoyenne,
-        familles: principales
+        teintes: teintes,
+        teinteDominante: teintes.length > 0 ? teintes[0].teinte : null,
+        teinteSecondaire: teintes.length > 1 ? teintes[1].teinte
+                        : (teintes.length > 0 ? teintes[0].teinte : null),
+        saturationMoyenne: comptage.saturationMoyenne
       };
     });
   }

@@ -1,8 +1,8 @@
 # Mood Colors
 
 Générateur de palettes moodboard : on tape une émotion ou une ambiance
-(« mélancolique », « serein », « dark academia », « cannelle »…) et la page
-compose une palette de **9 ou 16 couleurs harmonieuses** (au choix), un **dégradé avec grain**
+(« mélancolique », « serein », « dark academia », « cannelle »…), on importe une
+image ou on choisit une couleur, et la page compose une palette de **9 ou 16 couleurs harmonieuses** (au choix), un **dégradé avec grain**
 au format 9:16, et des **exports** prêts à l'emploi.
 
 Tout fonctionne en local : HTML, CSS et JavaScript « vanilla », sans framework,
@@ -42,6 +42,25 @@ sans dépendance et sans étape de construction (build).
   - Image noir et blanc → palette de gris légèrement réchauffés.
   - Le nom de mood n'est pas affiché ; Régénérer, la barre Teinte, le dégradé
     et les exports fonctionnent comme pour un mood (fichiers `mc_…`).
+- **Partir d'une couleur** (carte repliable « Partir d'une couleur », sous la
+  barre de recherche) : on choisit une couleur sur une **roue chromatique**
+  (souris, doigt ou clavier), avec un curseur de luminosité et un champ HEX,
+  puis un mode. Un aperçu montre la palette calculée ; le bouton
+  « Utiliser cette palette » l'applique à la page.
+  - **Camaïeu** : une seule teinte, du plus foncé au plus clair. Les nuances
+    foncées d'un jaune glissent vers l'ambre pour ne pas virer au kaki.
+  - **Dégradé** : des étapes régulières entre deux couleurs choisies (boutons
+    Départ / Arrivée : la roue modifie celle qui est sélectionnée), par le
+    chemin le plus court sur le cercle chromatique.
+  - **Harmonie** : la couleur choisie plus d'autres teintes tirées au hasard
+    (analogue, complémentaire, complémentaire divisée, triadique). « Autres
+    couleurs » tire une autre harmonie.
+  - La couleur choisie est toujours dans la palette, avec le même HEX. En
+    3×3 et en 4×4, camaïeu et dégradé sont deux calculs séparés (un dégradé de
+    16 étapes n'est pas celui de 9 étapes avec 7 en plus).
+  - Régénérer : nouvelle harmonie, ou léger jeu sur le camaïeu ; grisé pour un
+    dégradé strict, qui n'a rien à varier. Le dégradé mesh et le CSS utilisent
+    toujours les 9 couleurs.
 - **Palette 3×3** : 2 sombres teintés, 3 tons moyens, 2 accents, 2 clairs
   teintés. Jamais de noir ni de blanc purs. Texte noir ou blanc selon le
   contraste (formule WCAG). Clic sur une case = HEX copié.
@@ -123,6 +142,8 @@ js/palette.js     la fabrication des 16 couleurs d'un mood (9 de base + 7 nuance
 js/gradient.js    le dégradé canvas et le grain
 js/export.js      les exports PNG, CSS et JSON
 js/image.js       l'analyse des couleurs d'une image importée
+js/couleurBase.js le calcul d'une palette à partir d'une couleur (camaïeu, dégradé, harmonie)
+js/selecteur.js   la roue chromatique, le curseur de luminosité, le champ HEX et l'aperçu
 js/app.js         l'interface : relie les boutons et curseurs aux calculs
 fonts/            emplacement de la police du titre (voir fonts/LISEZMOI.txt)
 ```
@@ -136,6 +157,9 @@ ES) : c'est ce qui permet d'ouvrir la page par double-clic.
 - **Analyse des images** : réglages en haut de `js/image.js` (taille d'analyse,
   largeur des familles de teintes, nombre de couleurs relevées, seuils noir /
   blanc / gris, rayon d'un bloc de couleur).
+- **Couleur de base** : `js/couleurBase.js` (étendue du camaïeu `LUMINOSITE_CAMAIEU_MIN`
+  / `MAX`, les 4 harmonies et leur écart d'accent dans `HARMONIES`) ; la taille de la
+  roue est `TAILLE_ROUE` en haut de `js/selecteur.js`.
 - **Ajouter ou affiner un mood** : `js/moods.js`. Chaque mood est une fiche
   de réglages commentée (teinte, saturation, luminosité, harmonie, accent,
   sombres, clairs, composition du dégradé) suivie de ses mots-clés.

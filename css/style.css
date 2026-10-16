@@ -255,6 +255,8 @@ body {
    à droite même quand le titre est caché (image importée). */
 .bloc__actions {
   display: flex;
+  flex-wrap: wrap;           /* très petit écran : les boutons passent à la ligne */
+  justify-content: flex-end;
   align-items: center;
   gap: 10px;
   margin-left: auto;
@@ -341,11 +343,15 @@ body {
   margin-top: 20px;
 }
 
+.base__roue {
+  max-width: 100%;
+}
+
 .roue {
   position: relative;
   width: 240px;
-  height: 240px;
   max-width: 100%;
+  aspect-ratio: 1 / 1;      /* toujours un cercle, même si la roue rétrécit sur un petit écran */
   touch-action: none;       /* le doigt déplace le repère, il ne fait pas défiler la page */
   cursor: crosshair;
   border-radius: 50%;
@@ -378,8 +384,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  flex: 1;
-  min-width: 240px;
+  flex: 1 1 300px;           /* 300 px au moins, sinon elle passe sous la roue */
+  min-width: 0;
 }
 
 .base__etiquette {
@@ -471,8 +477,15 @@ body {
 }
 
 .base__reglages .choix-mode {
-  align-self: flex-start;
+  align-self: stretch;
+  max-width: 420px;
   margin-top: 6px;
+}
+
+.base__reglages .choix-mode__option {
+  flex: 1;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 /* Aperçu de la palette calculée */

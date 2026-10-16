@@ -13,6 +13,9 @@ var titrePalette = document.getElementById("titre-palette");
 var grille = document.getElementById("grille");
 var boutonTheme = document.getElementById("bouton-theme");
 var boutonRegenerer = document.getElementById("bouton-regenerer");
+var choixGrille = document.getElementById("choix-grille");
+var descriptionPngPalette = document.getElementById("description-png-palette");
+var descriptionCss = document.getElementById("description-css");
 var curseurHue = document.getElementById("curseur-hue");
 var valeurHue = document.getElementById("valeur-hue");
 var boutonResetHue = document.getElementById("bouton-reset-hue");
@@ -33,7 +36,8 @@ var nomImage = document.getElementById("nom-image");
 var etat = {
   moodPrincipal: null,   // le mood qui domine la palette
   moodAccent: null,      // le second mood, qui influence l'accent (ou null)
-  paletteDeBase: [],     // les 9 couleurs générées (avant tout décalage HUE)
+  paletteDeBase: [],     // les 16 couleurs générées (avant tout décalage HUE)
+  nombreDeCases: 9,      // combien on en affiche : 9 (grille 3x3) ou 16 (grille 4x4)
   decalageHue: 0,        // position du curseur HUE, de -180 à +180 degrés
   intensiteGrain: 45     // curseur "Intensité du grain", de 0 à 100
 };
@@ -43,8 +47,9 @@ var etat = {
 
 // La palette réellement affichée : la palette de base, tournée du décalage HUE.
 // On repart TOUJOURS de la base : les décalages ne se cumulent jamais.
+// Seules les premières couleurs sont gardées (9 ou 16, selon la grille choisie).
 function paletteAffichee() {
-  return etat.paletteDeBase.map(function (couleur) {
+  return etat.paletteDeBase.slice(0, etat.nombreDeCases).map(function (couleur) {
     return {
       role: couleur.role,
       libelle: couleur.libelle,
@@ -53,8 +58,27 @@ function paletteAffichee() {
   });
 }
 
-// Peint les 9 cases de la grille avec les couleurs données.
+// Prépare la grille pour un certain nombre de cases (9 ou 16) : on ajoute les
+// boutons manquants ou on retire ceux en trop, et on règle le nombre de colonnes.
+function preparerGrille(nombre) {
+  while (grille.children.length < nombre) {
+    var nouvelleCase = document.createElement("button");
+    nouvelleCase.type = "button";
+    nouvelleCase.className = "case";
+    var hex = document.createElement("span");
+    hex.className = "case__hex";
+    nouvelleCase.appendChild(hex);
+    grille.appendChild(nouvelleCase);
+  }
+  while (grille.children.length > nombre) {
+    grille.removeChild(grille.lastElementChild);
+  }
+  grille.classList.toggle("grille--4x4", nombre === 16);
+}
+
+// Peint les cases de la grille avec les couleurs données (9 ou 16).
 function afficherPalette(couleurs) {
+  preparerGrille(couleurs.length);
   var cases = grille.querySelectorAll(".case");
   couleurs.forEach(function (couleur, index) {
     var hex = Couleurs.hslVersHex(couleur.hsl);
@@ -315,6 +339,30 @@ grille.addEventListener("click", function (evenement) {
 // Même mood, nouvelle variation (le décalage HUE en cours est conservé).
 boutonRegenerer.addEventListener("click", function () {
   etat.paletteDeBase = Palette.generer(etat.moodPrincipal, etat.moodAccent);
+  rafraichir();
+});
+
+
+/* ---------- Choix de la grille : 3x3 ou 4x4 ---------- */
+
+// Les descriptions des exports citent la taille de la grille et le nombre de variables.
+function mettreAJourDescriptionsExports(nombre) {
+  var cotes = Math.round(Math.sqrt(nombre));   // 9 → 3, 16 → 4
+  descriptionPngPalette.textContent = "PNG · grille " + cotes + "×" + cotes + " avec les HEX";
+  descriptionCss.textContent = "--mood-1 à --mood-" + nombre + " + dégradé en radial-gradient";
+}
+
+// Basculer ne change AUCUNE couleur : la palette de base contient toujours
+// les 16 couleurs, on affiche seulement les 9 premières ou les 16.
+choixGrille.addEventListener("click", function (evenement) {
+  var option = evenement.target.closest("[data-cases]");
+  if (!option) return;
+
+  etat.nombreDeCases = Number(option.dataset.cases);
+  choixGrille.querySelectorAll("[data-cases]").forEach(function (bouton) {
+    bouton.setAttribute("aria-checked", bouton === option ? "true" : "false");
+  });
+  mettreAJourDescriptionsExports(etat.nombreDeCases);
   rafraichir();
 });
 

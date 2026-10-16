@@ -2,7 +2,7 @@
 
 Générateur de palettes moodboard : on tape une émotion ou une ambiance
 (« mélancolique », « serein », « dark academia », « cannelle »…) et la page
-compose une palette de **9 couleurs harmonieuses**, un **dégradé avec grain**
+compose une palette de **9 ou 16 couleurs harmonieuses** (au choix), un **dégradé avec grain**
 au format 9:16, et des **exports** prêts à l'emploi.
 
 Tout fonctionne en local : HTML, CSS et JavaScript « vanilla », sans framework,
@@ -41,18 +41,24 @@ sans dépendance et sans étape de construction (build).
     pour ne pas virer au kaki.
   - Image noir et blanc → palette de gris légèrement réchauffés.
   - Le nom de mood n'est pas affiché ; Régénérer, la barre Teinte, le dégradé
-    et les exports fonctionnent comme pour un mood (fichiers `mood-colors-image-…`).
+    et les exports fonctionnent comme pour un mood (fichiers `mc_…`).
 - **Palette 3×3** : 2 sombres teintés, 3 tons moyens, 2 accents, 2 clairs
   teintés. Jamais de noir ni de blanc purs. Texte noir ou blanc selon le
   contraste (formule WCAG). Clic sur une case = HEX copié.
+- **Choix 3×3 ou 4×4** (deux boutons à côté de « Régénérer ») : la grille
+  4×4 ajoute 7 nuances déduites des 9 de base (sombre moyen, dominante /
+  secondaire / tertiaire claires, accent profond, accent pâle, neutre
+  teinté). Basculer ne change aucune couleur : les 9 premières restent les
+  mêmes. Le dégradé utilise toujours les 9 couleurs de base.
 - **Régénérer** : une nouvelle variation du même mood.
-- **Barre Teinte** : fait tourner la teinte des 9 couleurs d'un bloc
+- **Barre Teinte** : fait tourner la teinte de toutes les couleurs affichées d'un bloc
   (de -180° à +180°), toujours à partir de la palette de base.
 - **Dégradé mesh avec grain** (canvas 2D), avec un curseur d'intensité du grain.
 - **Exports** : PNG du moodboard, PNG du dégradé en 1080×1920, variables CSS
-  (+ dégradé en `radial-gradient`), JSON. Les fichiers sont nommés
-  `mc_` + un nom au choix (`noname` par défaut), par exemple
-  `mc_noname_palette.png`, `mc_noname_degrade.png`, `mc_noname.css`.
+  (+ dégradé en `radial-gradient`), JSON. Ils suivent la grille choisie : le
+  moodboard passe en 4×4, le CSS et le JSON contiennent les 16 couleurs. Les
+  fichiers sont nommés `mc_` + un nom au choix (`noname` par défaut), par
+  exemple `mc_noname_palette.png`, `mc_noname_degrade.png`, `mc_noname.css`.
 - **Mode clair / sombre**, mémorisé dans le navigateur.
 
 
@@ -113,7 +119,7 @@ index.html        la page (structure)
 css/style.css     l'apparence (couleurs de l'interface en variables tout en haut)
 js/colors.js      conversions HEX / RGB / HSL, contraste, décalage de teinte
 js/moods.js       le dictionnaire des moods et la recherche
-js/palette.js     la fabrication des 9 couleurs d'un mood
+js/palette.js     la fabrication des 16 couleurs d'un mood (9 de base + 7 nuances)
 js/gradient.js    le dégradé canvas et le grain
 js/export.js      les exports PNG, CSS et JSON
 js/image.js       l'analyse des couleurs d'une image importée

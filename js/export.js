@@ -81,10 +81,22 @@ var Export = (function () {
     hautTitre: 120     // hauteur réservée au titre
   };
 
+  // Réglages de la grille selon le nombre de colonnes : en 4x4, les cases sont
+  // plus petites, donc l'espace, les coins arrondis et le texte aussi.
+  function reglagesGrille(colonnes) {
+    if (colonnes === 4) {
+      return { espace: 16, rayon: 22, taillePolice: 26, retraitTexte: 20 };
+    }
+    return { espace: MOODBOARD.espace, rayon: MOODBOARD.rayon, taillePolice: 30, retraitTexte: 26 };
+  }
+
   function pngPalette(couleurs, mood, decalageHue) {
     var m = MOODBOARD;
-    var tailleCase = (m.largeur - 2 * m.marge - 2 * m.espace) / 3;
-    var hauteur = m.hautTitre + 3 * tailleCase + 2 * m.espace + m.marge;
+    // 9 couleurs → grille 3x3, 16 couleurs → grille 4x4
+    var colonnes = Math.round(Math.sqrt(couleurs.length));
+    var g = reglagesGrille(colonnes);
+    var tailleCase = (m.largeur - 2 * m.marge - (colonnes - 1) * g.espace) / colonnes;
+    var hauteur = m.hautTitre + colonnes * tailleCase + (colonnes - 1) * g.espace + m.marge;
 
     var canvas = document.createElement("canvas");
     canvas.width = m.largeur;
@@ -107,24 +119,24 @@ var Export = (function () {
     ctx.fillText("MOOD COLORS · TEINTE " + texteDecalage(decalageHue), m.largeur - m.marge, m.marge + 16);
     ctx.textAlign = "left";
 
-    // Les 9 cases, avec le HEX en bas à gauche
+    // Les cases (9 ou 16), avec le HEX en bas à gauche
     couleurs.forEach(function (couleur, index) {
-      var colonne = index % 3;
-      var ligne = Math.floor(index / 3);
-      var x = m.marge + colonne * (tailleCase + m.espace);
-      var y = m.hautTitre + ligne * (tailleCase + m.espace);
+      var colonne = index % colonnes;
+      var ligne = Math.floor(index / colonnes);
+      var x = m.marge + colonne * (tailleCase + g.espace);
+      var y = m.hautTitre + ligne * (tailleCase + g.espace);
       var hex = Couleurs.hslVersHex(couleur.hsl);
 
       ctx.fillStyle = hex;
-      rectangleArrondi(ctx, x, y, tailleCase, tailleCase, m.rayon);
+      rectangleArrondi(ctx, x, y, tailleCase, tailleCase, g.rayon);
       // Fin contour : les couleurs très claires restent visibles sur le fond
       ctx.strokeStyle = "rgba(38, 35, 42, 0.08)";
       ctx.lineWidth = 2;
       ctx.stroke();
 
       ctx.fillStyle = Couleurs.couleurTexte(hex);
-      ctx.font = "600 30px system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif";
-      ctx.fillText(hex, x + 26, y + tailleCase - 26);
+      ctx.font = "600 " + g.taillePolice + "px system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif";
+      ctx.fillText(hex, x + g.retraitTexte, y + tailleCase - g.retraitTexte);
     });
 
     return canvasVersPng(canvas);

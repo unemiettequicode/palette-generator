@@ -58,11 +58,18 @@
          (le placement est fait dans style.css, section "Grand écran") -->
     <div class="espace-de-travail">
 
-      <!-- ========== PALETTE 3x3 ========== -->
+      <!-- ========== PALETTE (3x3 ou 4x4) ========== -->
       <section class="bloc bloc--palette" aria-labelledby="titre-palette">
         <div class="bloc__entete">
           <h2 class="bloc__titre" id="titre-palette">Mystérieux</h2>
-          <button class="bouton" id="bouton-regenerer" type="button">Régénérer</button>
+          <div class="bloc__actions">
+            <!-- Choix du nombre de cases : 3x3 (9 couleurs) ou 4x4 (16 couleurs) -->
+            <div class="choix-grille" id="choix-grille" role="radiogroup" aria-label="Nombre de cases">
+              <button class="choix-grille__option" type="button" role="radio" aria-checked="true" data-cases="9">3×3</button>
+              <button class="choix-grille__option" type="button" role="radio" aria-checked="false" data-cases="16">4×4</button>
+            </div>
+            <button class="bouton" id="bouton-regenerer" type="button">Régénérer</button>
+          </div>
         </div>
 
         <!-- Couleurs factices (références "Mystérieux") en attendant la génération -->
@@ -138,7 +145,7 @@
           <li class="export">
             <div class="export__texte">
               <strong>Moodboard</strong>
-              <span>PNG · grille 3×3 avec les HEX</span>
+              <span id="description-png-palette">PNG · grille 3×3 avec les HEX</span>
             </div>
             <div class="export__actions">
               <button class="bouton" type="button" data-export="png-palette" data-action="telecharger">Télécharger</button>
@@ -156,7 +163,7 @@
           <li class="export">
             <div class="export__texte">
               <strong>Variables CSS</strong>
-              <span>--mood-1 à --mood-9 + dégradé en radial-gradient</span>
+              <span id="description-css">--mood-1 à --mood-9 + dégradé en radial-gradient</span>
             </div>
             <div class="export__actions">
               <button class="bouton" type="button" data-export="css" data-action="copier">Copier</button>

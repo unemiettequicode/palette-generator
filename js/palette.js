@@ -6,6 +6,8 @@
    - 3 tons moyens       (dominante, secondaire, tertiaire)
    - 2 accents           (souvent à l'opposé de la dominante)
    - 2 clairs teintés    (jamais de blanc pur)
+   + 7 nuances en plus pour la grille 4x4 (voir creerNuances) : elles
+     sont calculées À PARTIR des 9 couleurs de base, qui ne changent pas.
 
    Tout est calculé en HSL à partir de la fiche du mood (moods.js),
    avec un peu d'aléatoire contrôlé : on tire des valeurs DANS les
@@ -171,21 +173,72 @@ var Palette = (function () {
   }
 
 
+  /* ---------- Les 7 nuances en plus (grille 4x4) ---------- */
+
+  // Un jaune assombri vire à l'olive : pour un ton plus foncé, une teinte
+  // jaune (40° à 80°) est glissée vers l'ambre (25° à 35°), un brun chaud.
+  function teinteSansOlive(teinte) {
+    var h = Couleurs.normaliserTeinte(teinte);
+    return estUnJaune(h) ? 25 + (h - 40) / 4 : h;
+  }
+
+  // 7 nuances déduites des 9 couleurs de base (dans cet ordre) :
+  // sombre moyen, dominante / secondaire / tertiaire claires,
+  // accent profond, accent pâle, neutre teinté.
+  function creerNuances(base) {
+    var dominante = base[2].hsl;
+    var secondaire = base[3].hsl;
+    var tertiaire = base[4].hsl;
+    var accent = base[5].hsl;
+
+    // Une version plus claire d'un ton moyen : même teinte, un peu moins saturée.
+    // Un jaune reste franchement clair (55 % minimum), sinon il vire au kaki.
+    function eclaircir(libelle, hsl) {
+      var teinte = varier(hsl.h, 3);
+      var luminosite = Math.min(varier(hsl.l + 18, 2), 90);
+      if (estUnJaune(teinte)) luminosite = Math.max(luminosite, 55);
+      return creerCouleur("moyen", libelle, teinte, hsl.s * 0.8, luminosite, false);
+    }
+
+    // Le sombre moyen se place entre le sombre et la dominante DU MOOD (un mood
+    // pastel a des "sombres" déjà clairs) : un peu plus clair que le sombre.
+    var sombre = base[1].hsl;
+    var luminositeSombreMoyen = sombre.l + Math.max((dominante.l - sombre.l) * 0.35, 6);
+
+    return [
+      creerCouleur("sombre", "Sombre moyen", teinteSansOlive(varier(dominante.h, 4)),
+        dominante.s * 0.6, varier(luminositeSombreMoyen, 1.5), true),
+      eclaircir("Dominante claire", dominante),
+      eclaircir("Secondaire claire", secondaire),
+      eclaircir("Tertiaire claire", tertiaire),
+      creerCouleur("accent", "Accent profond", teinteSansOlive(varier(accent.h, 4)),
+        accent.s * 0.9, Math.max(varier(accent.l - 20, 2), 22), false),
+      creerCouleur("accent", "Accent pâle", varier(accent.h, 3),
+        accent.s * 0.6, varier(86, 2), false),
+      creerCouleur("moyen", "Neutre teinté", varier(dominante.h, 4),
+        10, varier(60, 3), false)
+    ];
+  }
+
+
   /* ---------- Fonction principale ---------- */
 
-  // Génère les 9 couleurs d'un mood.
+  // Génère les 16 couleurs d'un mood : les 9 de base, puis 7 nuances.
   // - mood       : la fiche du mood principal (voir moods.js)
   // - moodAccent : un second mood qui influence l'accent, ou null
-  // Renvoie un tableau de 9 couleurs, dans l'ordre d'affichage de la grille :
-  // 2 sombres, 3 moyens, 2 accents, 2 clairs.
+  // Renvoie un tableau de 16 couleurs. Les 9 premières, dans l'ordre d'affichage
+  // de la grille 3x3 : 2 sombres, 3 moyens, 2 accents, 2 clairs. Les 7 suivantes
+  // complètent la grille 4x4. L'appli affiche les 9 premières ou les 16.
   function generer(mood, moodAccent) {
     var teinteDominante = tirer(mood.teinte);
 
-    return []
+    var base = []
       .concat(creerSombres(mood, teinteDominante))
       .concat(creerTonsMoyens(mood, teinteDominante))
       .concat(creerAccents(mood, teinteDominante, moodAccent))
       .concat(creerClairs(mood, teinteDominante));
+
+    return base.concat(creerNuances(base));
   }
 
   /* ---------- Fiche sur mesure (ex : depuis une image importée) ---------- */

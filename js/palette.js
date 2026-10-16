@@ -102,6 +102,21 @@ var Palette = (function () {
     // contrepoint discret (ex : le gris-vert "Ash Grey" du Mystérieux).
     var douceurTertiaire = mood.harmonie === "complementaire" ? 0.45 : 0.75;
 
+    // Fiche sur mesure (image importée) : chaque ton moyen a ses PROPRES plages de
+    // saturation et de luminosité, relevées dans l'image. Les moods n'ont pas
+    // ce champ et gardent le calcul habituel ci-dessous.
+    var tons = mood.tonsMoyens;
+    if (tons) {
+      return [
+        creerCouleur("moyen", "Dominante", teinteDominante,
+          tirer(tons[0].saturation), tirer(tons[0].luminosite), false),
+        creerCouleur("moyen", "Secondaire", varier(teinteDominante + ecarts[0], 6),
+          tirer(tons[1].saturation), tirer(tons[1].luminosite), false),
+        creerCouleur("moyen", "Tertiaire", varier(teinteDominante + ecarts[1], 6),
+          tirer(tons[2].saturation), tirer(tons[2].luminosite), false)
+      ];
+    }
+
     return [
       creerCouleur("moyen", "Dominante", teinteDominante,
         saturation, varier(dansLaPlage(mood.luminosite, 0.5), 3), false),
@@ -183,6 +198,9 @@ var Palette = (function () {
   // - harmonie    : "analogue", "complementaire", "complementaire-divisee"…
   // - saturation  : saturation de référence (0-100), ex : saturation moyenne d'une image
   // - ecartAccent : écart de teinte entre la dominante et l'accent (en degrés)
+  // - tonsMoyens  : (facultatif) 3 réglages { saturation, luminosite } pour la dominante,
+  //                 la secondaire et la tertiaire, au lieu du calcul habituel
+  // - tonAccent   : (facultatif) { saturation, luminosite } de l'accent
   // - nom, id     : pour l'affichage et les noms de fichiers d'export
   function ficheDepuisParametres(parametres) {
     // Saturation des tons moyens : on garde les mêmes bornes que les moods
@@ -209,7 +227,12 @@ var Palette = (function () {
       saturation: plage(centre - 8, centre + 8),
       luminosite: [35, 65],
       harmonie: harmonie,
-      accent:  { decalage: parametres.ecartAccent, saturation: plage(centre, centre + 15), luminosite: [50, 62] },
+      tonsMoyens: parametres.tonsMoyens,   // undefined si absent : calcul habituel
+      accent:  {
+        decalage: parametres.ecartAccent,
+        saturation: parametres.tonAccent ? parametres.tonAccent.saturation : plage(centre, centre + 15),
+        luminosite: parametres.tonAccent ? parametres.tonAccent.luminosite : [50, 62]
+      },
       sombres: { decalage: 0, saturation: plage(centre * 0.5, centre * 0.8), luminosite: [6, 16] },
       clairs:  { decalage: 0, saturation: plage(centre * 0.4, centre * 0.7), luminosite: [84, 93] },
       composition: "halo"

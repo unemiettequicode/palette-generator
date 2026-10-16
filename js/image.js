@@ -32,6 +32,9 @@ var ImageCouleurs = (function () {
   var NOMBRE_TEINTES = 4;          // nombre de blocs de couleur retenus
   var ECART_MIN_TEINTES = 25;      // rayon d'un bloc : deux blocs retenus sont au moins à 25° l'un de l'autre
   var PART_MIN_TEINTE = 0.03;      // un bloc doit peser au moins 3 % du poids visuel total
+  var LUMINOSITE_TON_MIN = 30;     // luminosité d'un ton moyen ou d'un accent : jamais plus sombre…
+  var LUMINOSITE_TON_MAX = 70;     // … ni plus claire
+  var LUMINOSITE_JAUNE_MIN = 55;   // un jaune doit rester clair (sinon il vire au kaki)
 
 
   /* ---------- 1. Charger l'image ---------- */
@@ -255,39 +258,57 @@ var ImageCouleurs = (function () {
     return h >= 40 && h <= 80;
   }
 
+  // Une couleur relevée par la pipette → réglages d'un ton de la palette :
+  // des plages (± quelques points) pour que Régénérer varie un peu sans
+  // s'éloigner de l'image. La luminosité reste dans le rôle d'un ton moyen
+  // (ni quasi noir, ni quasi blanc) et un jaune reste clair (sinon il vire au kaki).
+  function tonDepuisPipette(couleur) {
+    var luminositeMin = estUnJaune(couleur.teinte) ? LUMINOSITE_JAUNE_MIN : LUMINOSITE_TON_MIN;
+    var saturation = Couleurs.limiter(couleur.saturation, 8, 95);
+    var luminosite = Couleurs.limiter(couleur.luminosite, luminositeMin, LUMINOSITE_TON_MAX);
+    return {
+      saturation: [saturation - 5, saturation + 5],
+      luminosite: [luminosite - 4, luminosite + 4]
+    };
+  }
+
   // Image riche en couleurs (3 ou 4 teintes relevées) : chaque teinte trouve sa place.
   // - dominante          → ton moyen "Dominante"
   // - la plus vive       → accent (un accent est une petite touche d'intensité)
   // - les autres         → tons moyens "Secondaire" et "Tertiaire"
+  // Chaque ton reprend la saturation et la luminosité relevées dans l'image.
   function parametresMulticolore(analyse) {
     var dominante = analyse.teintes[0];
     var autres = analyse.teintes.slice(1);   // de la plus présente à la moins présente
 
-    var accent = autres.reduce(function (plusVive, teinte) {
-      return teinte.saturation > plusVive.saturation ? teinte : plusVive;
+    var accent = autres.reduce(function (plusVive, couleur) {
+      return couleur.saturation > plusVive.saturation ? couleur : plusVive;
     });
-    var tonsMoyens = autres.filter(function (teinte) { return teinte !== accent; });
+    var secondaires = autres.filter(function (couleur) { return couleur !== accent; });
 
-    // Écarts (en degrés) de la dominante vers la secondaire puis la tertiaire.
-    var ecarts = tonsMoyens.map(function (teinte) {
-      return ecartSigne(dominante.teinte, teinte.teinte);
-    });
-    // Image à 3 teintes seulement : la tertiaire est une teinte intermédiaire
+    // Image à 3 teintes seulement : la tertiaire est une couleur intermédiaire
     // entre la dominante et la secondaire.
-    if (ecarts.length === 1) {
-      ecarts.push(ecarts[0] / 2);
+    if (secondaires.length === 1) {
+      secondaires.push({
+        teinte: Couleurs.normaliserTeinte(dominante.teinte + ecartSigne(dominante.teinte, secondaires[0].teinte) / 2),
+        saturation: (dominante.saturation + secondaires[0].saturation) / 2,
+        luminosite: (dominante.luminosite + secondaires[0].luminosite) / 2
+      });
     }
     // La secondaire est le ton moyen le plus sombre, la tertiaire le plus clair :
     // un jaune doit donc être en tertiaire (sinon il vire au kaki).
-    if (estUnJaune(dominante.teinte + ecarts[0]) && !estUnJaune(dominante.teinte + ecarts[1])) {
-      ecarts.reverse();
+    if (estUnJaune(secondaires[0].teinte) && !estUnJaune(secondaires[1].teinte)) {
+      secondaires.reverse();
     }
 
     return {
       teinte: dominante.teinte,
-      harmonie: ecarts,   // écarts sur mesure, comme les moods : [secondaire, tertiaire]
+      // écarts sur mesure, comme les moods : [secondaire, tertiaire]
+      harmonie: secondaires.map(function (couleur) { return ecartSigne(dominante.teinte, couleur.teinte); }),
       saturation: analyse.saturationMoyenne,
       ecartAccent: ecartSigne(dominante.teinte, accent.teinte),
+      tonsMoyens: [dominante, secondaires[0], secondaires[1]].map(tonDepuisPipette),
+      tonAccent: tonDepuisPipette(accent),
       nom: "Image importée",
       id: "image"
     };

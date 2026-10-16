@@ -30,12 +30,15 @@ sans dépendance et sans étape de construction (build).
     une « pipette » relève la vraie couleur de chacun (teinte, saturation,
     luminosité).
   - Avec 3 ou 4 teintes : la plus présente → dominante ; la plus vive des
-    autres → accent ; les deux restantes → secondaire et tertiaire. Un jaune
-    est placé dans le ton clair pour ne pas virer au kaki.
+    autres → accent ; les deux restantes → secondaire et tertiaire. Chaque ton
+    reprend la saturation et la luminosité relevées dans l'image (un vert
+    pastel reste pastel), avec un léger jeu à chaque « Régénérer ».
   - Avec 1 ou 2 teintes : teinte dominante → dominante ; teinte secondaire →
     accent. Harmonie selon l'écart entre les deux : moins de 60° analogue,
-    moins de 150° complémentaire divisée, au-delà complémentaire.
-  - Saturation moyenne de l'image → palette plus douce ou plus vive.
+    moins de 150° complémentaire divisée, au-delà complémentaire. La
+    saturation moyenne de l'image rend la palette plus douce ou plus vive.
+  - Dans tous les cas, un jaune est placé dans le ton clair (la tertiaire)
+    pour ne pas virer au kaki.
   - Image noir et blanc → palette de gris légèrement réchauffés.
   - Le nom de mood n'est pas affiché ; Régénérer, la barre Teinte, le dégradé
     et les exports fonctionnent comme pour un mood (fichiers `mood-colors-image-…`).

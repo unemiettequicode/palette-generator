@@ -13,6 +13,8 @@
   <script defer src="js/gradient.js"></script>
   <script defer src="js/export.js"></script>
   <script defer src="js/image.js"></script>
+  <script defer src="js/couleurBase.js"></script>
+  <script defer src="js/selecteur.js"></script>
   <script defer src="js/app.js"></script>
 </head>
 <body>
@@ -53,6 +55,60 @@
 
     <!-- Zone de message (mot inconnu, suggestions…) — vide pour l'instant -->
     <p class="message" id="message" aria-live="polite"></p>
+
+    <!-- ========== PARTIR D'UNE COULEUR ========== -->
+    <!-- Carte repliable : on choisit une couleur sur la roue, puis comment
+         calculer la palette (camaïeu, dégradé entre 2 couleurs, harmonie). -->
+    <details class="bloc bloc--base" id="bloc-base">
+      <summary class="bloc--base__resume">Partir d'une couleur</summary>
+
+      <div class="base">
+        <!-- La roue : l'angle donne la teinte, la distance au centre la saturation -->
+        <div class="base__roue">
+          <div class="roue" id="roue" tabindex="0" role="group"
+               aria-label="Roue chromatique. Flèches gauche et droite : teinte. Flèches haut et bas : saturation.">
+            <canvas class="roue__canvas" id="roue-canvas"></canvas>
+            <span class="roue__repere" id="roue-repere"></span>
+          </div>
+        </div>
+
+        <div class="base__reglages">
+          <!-- Dégradé : on choisit 2 couleurs, la roue modifie celle qui est sélectionnée -->
+          <div class="choix-mode base__cibles" id="base-cibles" role="radiogroup" aria-label="Couleur à modifier" hidden>
+            <button class="choix-mode__option" type="button" role="radio" aria-checked="true" data-cible="depart">
+              <span class="base__pastille" id="pastille-depart"></span>Départ
+            </button>
+            <button class="choix-mode__option" type="button" role="radio" aria-checked="false" data-cible="arrivee">
+              <span class="base__pastille" id="pastille-arrivee"></span>Arrivée
+            </button>
+          </div>
+
+          <label class="base__etiquette" for="curseur-luminosite">Luminosité</label>
+          <input class="base__luminosite" id="curseur-luminosite" type="range" min="2" max="98" step="1" value="60">
+
+          <label class="base__etiquette" for="champ-hex">Code HEX</label>
+          <div class="base__hex-ligne">
+            <span class="base__pastille base__pastille--grande" id="pastille-active"></span>
+            <input class="base__hex" id="champ-hex" type="text" maxlength="7" spellcheck="false" autocomplete="off" placeholder="#5188F5">
+          </div>
+
+          <div class="choix-mode" id="choix-mode" role="radiogroup" aria-label="Type de palette">
+            <button class="choix-mode__option" type="button" role="radio" aria-checked="true" data-mode="camaieu">Camaïeu</button>
+            <button class="choix-mode__option" type="button" role="radio" aria-checked="false" data-mode="degrade">Dégradé</button>
+            <button class="choix-mode__option" type="button" role="radio" aria-checked="false" data-mode="harmonie">Harmonie</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aperçu de la palette calculée -->
+      <div class="base__resultat">
+        <div class="base__resultat-entete">
+          <span class="base__resultat-titre" id="base-titre"></span>
+          <button class="bouton" id="bouton-autre-harmonie" type="button" hidden>Autres couleurs</button>
+        </div>
+        <div class="base__apercu" id="base-apercu" aria-label="Aperçu de la palette"></div>
+      </div>
+    </details>
 
     <!-- Les blocs de travail : une colonne sur mobile, deux sur grand écran
          (le placement est fait dans style.css, section "Grand écran") -->

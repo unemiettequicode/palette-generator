@@ -363,6 +363,7 @@ choixGrille.addEventListener("click", function (evenement) {
     bouton.setAttribute("aria-checked", bouton === option ? "true" : "false");
   });
   mettreAJourDescriptionsExports(etat.nombreDeCases);
+  SelecteurCouleur.definirNombre(etat.nombreDeCases);   // l'aperçu du sélecteur de couleur suit la grille
   rafraichir();
 });
 

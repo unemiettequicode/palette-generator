@@ -273,15 +273,18 @@ body {
   gap: 8px;
 }
 
-/* Choix 3x3 / 4x4 : deux petits boutons collés, celui choisi est plein */
-.choix-grille {
+/* Choix 3x3 / 4x4 (et choix du mode de la couleur de base) : de petits boutons
+   collés, celui choisi est plein */
+.choix-grille,
+.choix-mode {
   display: flex;
   border: 1px solid var(--bordure);
   border-radius: var(--rayon-pilule);
   overflow: hidden;
 }
 
-.choix-grille__option {
+.choix-grille__option,
+.choix-mode__option {
   padding: 10px 14px;
   border: none;
   background: var(--surface);
@@ -291,18 +294,214 @@ body {
   cursor: pointer;
 }
 
-.choix-grille__option:hover {
+.choix-grille__option:hover,
+.choix-mode__option:hover {
   background: var(--fond);
 }
 
-.choix-grille__option[aria-checked="true"] {
+.choix-grille__option[aria-checked="true"],
+.choix-mode__option[aria-checked="true"] {
   background: var(--texte);
   color: var(--fond);
 }
 
-.choix-grille__option:focus-visible {
+.choix-grille__option:focus-visible,
+.choix-mode__option:focus-visible {
   outline: 3px solid var(--texte);
   outline-offset: -3px;
+}
+
+/* ---------- 8 bis. Partir d'une couleur (roue chromatique) ---------- */
+.bloc--base__resume {
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bloc--base__resume:focus-visible {
+  outline: 3px solid var(--texte);
+  outline-offset: 4px;
+  border-radius: var(--rayon-moyen);
+}
+
+.base {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  margin-top: 20px;
+}
+
+.roue {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  max-width: 100%;
+  touch-action: none;       /* le doigt déplace le repère, il ne fait pas défiler la page */
+  cursor: crosshair;
+  border-radius: 50%;
+}
+
+.roue:focus-visible {
+  outline: 3px solid var(--texte);
+  outline-offset: 4px;
+}
+
+.roue__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Le petit rond posé sur la roue, à l'endroit de la couleur */
+.roue__repere {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  pointer-events: none;     /* le clic passe au travers, jusqu'à la roue */
+}
+
+.base__reglages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-width: 240px;
+}
+
+.base__etiquette {
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* Curseur de luminosité : la piste va du foncé au clair (couleur posée par le JS) */
+.base__luminosite {
+  width: 100%;
+  height: 14px;
+  border-radius: 7px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--piste, linear-gradient(to right, #000, #fff));
+  border: 1px solid var(--bordure);
+  cursor: pointer;
+}
+
+.base__luminosite::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.base__luminosite::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.base__luminosite:focus-visible {
+  outline: 3px solid var(--texte);
+  outline-offset: 3px;
+}
+
+.base__hex-ligne {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.base__pastille {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--bordure);
+  vertical-align: -3px;
+}
+
+.base__pastille--grande {
+  width: 40px;
+  height: 40px;
+  margin-right: 0;
+  border-radius: var(--rayon-moyen);
+}
+
+.base__hex {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon-moyen);
+  background: var(--fond);
+  color: var(--texte);
+  font: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.base__hex[aria-invalid="true"] {
+  border-color: #c0392b;
+}
+
+/* L'attribut "hidden" doit gagner même quand une règle donne un display (flex…) */
+.choix-mode[hidden],
+.bouton[hidden] {
+  display: none;
+}
+
+.base__reglages .choix-mode {
+  align-self: flex-start;
+  margin-top: 6px;
+}
+
+/* Aperçu de la palette calculée */
+.base__resultat {
+  margin-top: 24px;
+}
+
+.base__resultat-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.base__resultat-titre {
+  font-weight: 600;
+  color: var(--texte-doux);
+}
+
+.base__apercu {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 6px;
+}
+
+.base__apercu--16 {
+  grid-template-columns: repeat(8, 1fr);
+}
+
+.base__apercu--attente {
+  opacity: 0.45;            /* l'aperçu n'est pas à jour pendant qu'on glisse (harmonie) */
+}
+
+.base__apercu-case {
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  border: 1px solid var(--bordure);
 }
 
 .case {
@@ -580,6 +779,18 @@ body {
 
   .grille--4x4 {
     gap: 6px;
+  }
+
+  .base {
+    justify-content: center;
+  }
+
+  .base__apercu {
+    gap: 4px;
+  }
+
+  .base__apercu-case {
+    border-radius: 5px;
   }
 
   .grille--4x4 .case__hex {

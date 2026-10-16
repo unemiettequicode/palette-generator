@@ -93,9 +93,17 @@ var CouleurBase = (function () {
     return teinteBase + (30 - teinteBase) * glissement;
   }
 
+  // Un petit écart au hasard, entre -amplitude et +amplitude.
+  function ecartAleatoire(amplitude) {
+    return (Math.random() * 2 - 1) * amplitude;
+  }
+
   // "nombre" nuances de la même teinte, de la plus foncée à la plus claire.
   // La nuance la plus proche de la couleur de base est remplacée par elle-même, exacte.
-  function genererCamaieu(hexBase, nombre) {
+  // "variation" (0 = aucune, 1 = normale) ajoute un léger jeu au hasard sur la
+  // saturation (±6 points) et la teinte (±2°) des autres nuances : c'est ce que
+  // fait « Régénérer ». Sans variation, le résultat est toujours le même.
+  function genererCamaieu(hexBase, nombre, variation) {
     var base = Couleurs.hexVersHsl(hexBase);
     var pas = (LUMINOSITE_CAMAIEU_MAX - LUMINOSITE_CAMAIEU_MIN) / (nombre - 1);
     var rangBase = Couleurs.limiter(Math.round((base.l - LUMINOSITE_CAMAIEU_MIN) / pas), 0, nombre - 1);
@@ -107,8 +115,11 @@ var CouleurBase = (function () {
         continue;
       }
       var luminosite = LUMINOSITE_CAMAIEU_MIN + i * pas;
-      couleurs.push(creerCouleur("nuance", "Nuance " + (i + 1),
-        { h: teinteCamaieu(base.h, luminosite), s: saturationCamaieu(base, luminosite), l: luminosite }));
+      couleurs.push(creerCouleur("nuance", "Nuance " + (i + 1), {
+        h: teinteCamaieu(base.h, luminosite) + ecartAleatoire(2 * variation),
+        s: saturationCamaieu(base, luminosite) + ecartAleatoire(6 * variation),
+        l: luminosite
+      }));
     }
     return couleurs;
   }
@@ -218,6 +229,7 @@ var CouleurBase = (function () {
   // - arrivee  : (mode "degrade") la couleur d'arrivée, en HEX
   // - harmonie : (mode "harmonie", facultatif) "analogue", "complementaire",
   //              "complementaire-divisee" ou "triadique". Sinon : tirée au hasard.
+  // - variation: (mode "camaieu", facultatif) 0 par défaut ; 1 = léger jeu au hasard
   // Renvoie :
   // {
   //   neuf:  les 9 couleurs de la grille 3x3,
@@ -260,8 +272,8 @@ var CouleurBase = (function () {
     // Par défaut : le camaïeu
     var titreCamaieu = "Camaïeu " + hex;
     return {
-      neuf: genererCamaieu(hex, 9),
-      seize: genererCamaieu(hex, 16),
+      neuf: genererCamaieu(hex, 9, options.variation || 0),
+      seize: genererCamaieu(hex, 16, options.variation || 0),
       fiche: creerFiche(base, "analogue", 30, titreCamaieu),
       titre: titreCamaieu,
       harmonie: null

@@ -11,8 +11,9 @@
    - En mode "dégradé", il y a DEUX couleurs (départ et arrivée) : les
      boutons Départ / Arrivée disent laquelle la roue modifie.
 
-   Ce fichier ne touche pas à la palette de la page : il prévient
-   l'appli par une fonction (voir surChangement), qui décide quoi faire.
+   Ce fichier ne touche pas à la palette de la page : quand on clique sur
+   « Utiliser cette palette », il prévient l'appli par une fonction
+   (voir surApplication), qui décide quoi faire.
    ========================================================= */
 
 var SelecteurCouleur = (function () {
@@ -40,6 +41,7 @@ var SelecteurCouleur = (function () {
   var choixMode = document.getElementById("choix-mode");
   var choixCible = document.getElementById("base-cibles");
   var zoneAutreHarmonie = document.getElementById("bouton-autre-harmonie");
+  var boutonUtiliser = document.getElementById("bouton-utiliser-palette");
   var titreApercu = document.getElementById("base-titre");
   var apercu = document.getElementById("base-apercu");
 
@@ -56,7 +58,7 @@ var SelecteurCouleur = (function () {
     resultat: null                                      // la dernière palette calculée
   };
   var luminositeDessinee = null;   // la luminosité avec laquelle la roue est dessinée
-  var quandCaChange = null;        // la fonction à prévenir (voir surChangement)
+  var quandOnApplique = null;      // la fonction à prévenir (voir surApplication)
 
 
   /* ---------- Petits outils ---------- */
@@ -217,24 +219,11 @@ var SelecteurCouleur = (function () {
     });
   }
 
-  // Prévient l'appli que la palette a changé.
-  function prevenir() {
-    if (!quandCaChange) return;
-    quandCaChange({
-      mode: etat.mode,
-      couleur: hex(etat.depart),
-      arrivee: hex(etat.arrivee),
-      harmonie: etat.harmonie,
-      resultat: etat.resultat
-    });
-  }
-
   // Une couleur ou un réglage a changé : on met tout à jour.
   // "valider" vaut vrai à la fin d'un geste (relâcher la souris, taper un HEX, changer de mode…).
   function appliquer(valider, sauterChampHex) {
     afficherCouleurActive(sauterChampHex);
     recalculerApercu(valider);
-    if (valider) prevenir();
   }
 
 
@@ -325,6 +314,11 @@ var SelecteurCouleur = (function () {
     afficherCouleurActive();
   });
 
+  // « Utiliser cette palette » : l'appli reçoit ce que montre l'aperçu.
+  boutonUtiliser.addEventListener("click", function () {
+    if (quandOnApplique && etat.resultat) quandOnApplique(lire());
+  });
+
   // Harmonie : « Autres couleurs » tire une autre harmonie au hasard.
   zoneAutreHarmonie.addEventListener("click", function () {
     etat.harmonie = null;
@@ -334,9 +328,9 @@ var SelecteurCouleur = (function () {
 
   /* ---------- Ce que l'appli peut utiliser ---------- */
 
-  // Donne la fonction à appeler quand une palette est validée.
-  function surChangement(fonction) {
-    quandCaChange = fonction;
+  // Donne la fonction à appeler quand on clique sur « Utiliser cette palette ».
+  function surApplication(fonction) {
+    quandOnApplique = fonction;
   }
 
   // 9 (grille 3x3) ou 16 (grille 4x4) : l'aperçu suit la grille choisie.
@@ -363,7 +357,7 @@ var SelecteurCouleur = (function () {
   appliquer(true);
 
   return {
-    surChangement: surChangement,
+    surApplication: surApplication,
     definirNombre: definirNombre,
     lire: lire
   };

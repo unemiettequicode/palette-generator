@@ -186,7 +186,10 @@ var Export = (function () {
     return calques.join(",\n");
   }
 
-  function css(couleurs, mood, decalageHue) {
+  // couleursDegrade (facultatif) : les 9 couleurs qui servent au dégradé. En grille 4x4,
+  // certaines palettes (camaïeu, dégradé) ont 16 couleurs différentes des 9 de la
+  // grille 3x3 : le dégradé garde toujours les 9.
+  function css(couleurs, mood, decalageHue, couleursDegrade) {
     var lignes = [];
     lignes.push("/* Mood Colors — " + mood.nom + " (teinte " + texteDecalage(decalageHue) + ") */");
     lignes.push(":root {");
@@ -196,7 +199,7 @@ var Export = (function () {
     lignes.push("");
     lignes.push("  /* Approximation du dégradé (sans le grain) */");
     lignes.push("  --mood-degrade:");
-    lignes.push(degradeCss(couleurs, mood) + ";");
+    lignes.push(degradeCss(couleursDegrade || couleurs, mood) + ";");
     lignes.push("}");
     lignes.push("");
     lignes.push("/* Exemple d'utilisation */");

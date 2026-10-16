@@ -29,6 +29,7 @@ var champImage = document.getElementById("champ-image");
 var blocImage = document.getElementById("image-importee");
 var vignetteImage = document.getElementById("vignette-image");
 var nomImage = document.getElementById("nom-image");
+var blocPalette = document.querySelector(".bloc--palette");
 
 
 /* ---------- État de l'application ---------- */
@@ -36,8 +37,10 @@ var nomImage = document.getElementById("nom-image");
 var etat = {
   moodPrincipal: null,   // le mood qui domine la palette
   moodAccent: null,      // le second mood, qui influence l'accent (ou null)
-  paletteDeBase: [],     // les 16 couleurs générées (avant tout décalage HUE)
+  paletteDeBase: [],     // les 16 couleurs de la grille 4x4 (avant tout décalage HUE)
+  paletteNeuf: [],       // les 9 couleurs de la grille 3x3 (et du dégradé)
   nombreDeCases: 9,      // combien on en affiche : 9 (grille 3x3) ou 16 (grille 4x4)
+  base: null,            // si la palette vient d'une couleur de base : { mode, couleur, arrivee }, sinon null
   decalageHue: 0,        // position du curseur HUE, de -180 à +180 degrés
   intensiteGrain: 45     // curseur "Intensité du grain", de 0 à 100
 };
@@ -45,11 +48,21 @@ var etat = {
 
 /* ---------- Affichage de la palette ---------- */
 
+// Mémorise une palette : ses 16 couleurs (grille 4x4) et ses 9 couleurs (grille 3x3).
+// Pour un mood ou une image, les 9 sont simplement les 9 premières des 16 ; pour un
+// camaïeu ou un dégradé, ce sont deux calculs différents (voir couleurBase.js).
+function definirPalette(seize, neuf) {
+  etat.paletteDeBase = seize;
+  etat.paletteNeuf = neuf || seize.slice(0, 9);
+}
+
 // La palette réellement affichée : la palette de base, tournée du décalage HUE.
 // On repart TOUJOURS de la base : les décalages ne se cumulent jamais.
-// Seules les premières couleurs sont gardées (9 ou 16, selon la grille choisie).
-function paletteAffichee() {
-  return etat.paletteDeBase.slice(0, etat.nombreDeCases).map(function (couleur) {
+// "nombre" (9 ou 16) : par défaut, celui de la grille choisie. Le dégradé et les
+// exports qui en dépendent demandent toujours 9.
+function paletteAffichee(nombre) {
+  var base = (nombre || etat.nombreDeCases) === 16 ? etat.paletteDeBase : etat.paletteNeuf;
+  return base.map(function (couleur) {
     return {
       role: couleur.role,
       libelle: couleur.libelle,
@@ -95,7 +108,7 @@ function afficherPalette(couleurs) {
 function rafraichir() {
   var couleurs = paletteAffichee();
   afficherPalette(couleurs);
-  Degrade.dessiner(canvasDegrade, couleurs, etat.moodPrincipal, etat.intensiteGrain);
+  Degrade.dessiner(canvasDegrade, paletteAffichee(9), etat.moodPrincipal, etat.intensiteGrain);   // toujours les 9
 }
 
 
@@ -154,6 +167,8 @@ function choisirMoods(principal, accent, motPartage) {
   titrePalette.textContent = principal.nom;
   titrePalette.classList.remove("visuellement-cache");   // il a pu être caché par une image
   blocImage.hidden = true;                                // on n'est plus sur l'image importée
+  etat.base = null;                                       // ni sur une couleur de base
+  mettreAJourBoutonRegenerer();
 
   var texte = "";
   if (accent) {
@@ -171,7 +186,7 @@ function choisirMoods(principal, accent, motPartage) {
     afficherMessage(texte);
   }
 
-  etat.paletteDeBase = Palette.generer(principal, accent);
+  definirPalette(Palette.generer(principal, accent));
   rafraichir();
 }
 
@@ -275,6 +290,8 @@ function choisirImage(analyse) {
   var fiche = Palette.ficheDepuisParametres(ImageCouleurs.parametresPalette(analyse));
   etat.moodPrincipal = fiche;
   etat.moodAccent = null;   // l'accent vient déjà de la teinte secondaire de l'image
+  etat.base = null;         // on n'est plus sur une couleur de base
+  mettreAJourBoutonRegenerer();
 
   // Le nom de mood ne s'affiche pas quand l'image est la source.
   // Le titre reste lisible par les lecteurs d'écran (caché visuellement seulement).
@@ -283,7 +300,7 @@ function choisirImage(analyse) {
   champMood.value = "";
   afficherMessage("Palette créée à partir de ton image. Régénérer propose une variation.");
 
-  etat.paletteDeBase = Palette.generer(fiche, null);
+  definirPalette(Palette.generer(fiche, null));
   rafraichir();
 }
 
@@ -335,10 +352,68 @@ grille.addEventListener("click", function (evenement) {
 });
 
 
+/* ---------- Palette à partir d'une couleur de base ---------- */
+
+// Régénérer n'a rien à varier pour un dégradé strict (c'est une transition exacte
+// entre deux couleurs) : le bouton est alors grisé (aria-disabled, pas "disabled",
+// pour garder le même aspect que partout ailleurs sauf dans ce cas).
+function mettreAJourBoutonRegenerer() {
+  var rienAVarier = Boolean(etat.base) && etat.base.mode === "degrade";
+  boutonRegenerer.setAttribute("aria-disabled", rienAVarier ? "true" : "false");
+  boutonRegenerer.title = rienAVarier ? "Rien à varier : un dégradé strict est toujours le même" : "";
+}
+
+// Affiche la palette calculée par couleurBase.js (le résultat montré dans l'aperçu du sélecteur).
+// Le "mood" est ici une fiche fabriquée à partir de la couleur : Régénérer (via
+// CouleurBase), la barre Teinte, le dégradé et les exports s'en servent comme pour un mood.
+function appliquerCouleurBase(choix) {
+  var resultat = choix.resultat;
+  etat.moodPrincipal = resultat.fiche;
+  etat.moodAccent = null;
+  etat.base = { mode: choix.mode, couleur: choix.couleur, arrivee: choix.arrivee };
+  definirPalette(resultat.seize, resultat.neuf);
+
+  titrePalette.textContent = resultat.titre;
+  titrePalette.classList.remove("visuellement-cache");   // il a pu être caché par une image
+  blocImage.hidden = true;
+  champMood.value = "";
+  afficherMessage("Palette créée à partir de ta couleur " + choix.couleur + ". Régénérer propose une variation.");
+  mettreAJourBoutonRegenerer();
+  rafraichir();
+
+  // Sur mobile la palette est sous la carte : on l'amène à l'écran (sans animation si l'utilisateur la désactive).
+  var sansAnimation = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  blocPalette.scrollIntoView({ behavior: sansAnimation ? "auto" : "smooth", block: "nearest" });
+}
+
+SelecteurCouleur.surApplication(appliquerCouleurBase);
+
+// Régénérer une palette de couleur de base : nouvelle harmonie (la couleur reste la même)
+// ou léger jeu sur le camaïeu.
+function regenererCouleurBase() {
+  var resultat = CouleurBase.generer({
+    mode: etat.base.mode,
+    couleur: etat.base.couleur,
+    arrivee: etat.base.arrivee,
+    harmonie: null,   // en mode "harmonie" : une autre harmonie est tirée au hasard
+    variation: 1      // en mode "camaïeu" : léger jeu sur les nuances
+  });
+  etat.moodPrincipal = resultat.fiche;
+  definirPalette(resultat.seize, resultat.neuf);
+  titrePalette.textContent = resultat.titre;
+}
+
+
 /* ---------- Bouton Régénérer ---------- */
-// Même mood, nouvelle variation (le décalage HUE en cours est conservé).
+// Même mood (ou même couleur de base), nouvelle variation (le décalage HUE en cours est conservé).
 boutonRegenerer.addEventListener("click", function () {
-  etat.paletteDeBase = Palette.generer(etat.moodPrincipal, etat.moodAccent);
+  if (boutonRegenerer.getAttribute("aria-disabled") === "true") return;
+
+  if (etat.base) {
+    regenererCouleurBase();
+  } else {
+    definirPalette(Palette.generer(etat.moodPrincipal, etat.moodAccent));
+  }
   rafraichir();
 });
 
@@ -415,11 +490,11 @@ function preparerExport(format) {
              nomFichier: Export.nomDeFichier(champNomExport.value, "palette", "png"), type: "image/png" };
   }
   if (format === "png-degrade") {
-    return { contenu: Export.pngDegrade(couleurs, mood, etat.intensiteGrain),
+    return { contenu: Export.pngDegrade(paletteAffichee(9), mood, etat.intensiteGrain),
              nomFichier: Export.nomDeFichier(champNomExport.value, "degrade", "png"), type: "image/png" };
   }
   if (format === "css") {
-    return { contenu: Export.css(couleurs, mood, etat.decalageHue),
+    return { contenu: Export.css(couleurs, mood, etat.decalageHue, paletteAffichee(9)),
              nomFichier: Export.nomDeFichier(champNomExport.value, "", "css"), type: "text/css" };
   }
   return { contenu: Export.json(couleurs, mood, etat.moodAccent, etat.decalageHue),

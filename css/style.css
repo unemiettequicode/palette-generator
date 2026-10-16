@@ -223,6 +223,16 @@ body {
   color: var(--fond);
 }
 
+/* Bouton qui n'a rien à faire dans le contexte actuel (ex : Régénérer sur un dégradé strict) */
+.bouton[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.bouton[aria-disabled="true"]:hover {
+  border-color: var(--bordure);
+}
+
 /* ---------- 7. Blocs (palette, hue…) ---------- */
 .bloc {
   margin-top: 32px;
@@ -477,6 +487,12 @@ body {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 10px;
+}
+
+.base__resultat-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .base__resultat-titre {

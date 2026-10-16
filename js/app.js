@@ -14,6 +14,8 @@ var grille = document.getElementById("grille");
 var boutonTheme = document.getElementById("bouton-theme");
 var boutonRegenerer = document.getElementById("bouton-regenerer");
 var choixGrille = document.getElementById("choix-grille");
+var descriptionPngPalette = document.getElementById("description-png-palette");
+var descriptionCss = document.getElementById("description-css");
 var curseurHue = document.getElementById("curseur-hue");
 var valeurHue = document.getElementById("valeur-hue");
 var boutonResetHue = document.getElementById("bouton-reset-hue");
@@ -259,6 +261,14 @@ boutonRegenerer.addEventListener("click", function () {
 
 
 /* ---------- Choix de la grille : 3x3 ou 4x4 ---------- */
+
+// Les descriptions des exports citent la taille de la grille et le nombre de variables.
+function mettreAJourDescriptionsExports(nombre) {
+  var cotes = Math.round(Math.sqrt(nombre));   // 9 → 3, 16 → 4
+  descriptionPngPalette.textContent = "PNG · grille " + cotes + "×" + cotes + " avec les HEX";
+  descriptionCss.textContent = "--mood-1 à --mood-" + nombre + " + dégradé en radial-gradient";
+}
+
 // Basculer ne change AUCUNE couleur : la palette de base contient toujours
 // les 16 couleurs, on affiche seulement les 9 premières ou les 16.
 choixGrille.addEventListener("click", function (evenement) {
@@ -269,6 +279,7 @@ choixGrille.addEventListener("click", function (evenement) {
   choixGrille.querySelectorAll("[data-cases]").forEach(function (bouton) {
     bouton.setAttribute("aria-checked", bouton === option ? "true" : "false");
   });
+  mettreAJourDescriptionsExports(etat.nombreDeCases);
   rafraichir();
 });
 

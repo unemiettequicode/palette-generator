@@ -29,7 +29,6 @@ var champImage = document.getElementById("champ-image");
 var blocImage = document.getElementById("image-importee");
 var vignetteImage = document.getElementById("vignette-image");
 var nomImage = document.getElementById("nom-image");
-var blocPalette = document.querySelector(".bloc--palette");
 
 
 /* ---------- État de l'application ---------- */
@@ -40,7 +39,7 @@ var etat = {
   paletteDeBase: [],     // les 16 couleurs de la grille 4x4 (avant tout décalage HUE)
   paletteNeuf: [],       // les 9 couleurs de la grille 3x3 (et du dégradé)
   nombreDeCases: 9,      // combien on en affiche : 9 (grille 3x3) ou 16 (grille 4x4)
-  base: null,            // si la palette vient d'une couleur de base : { mode, couleur, arrivee }, sinon null
+  base: null,            // si la palette vient du sélecteur de couleur : { mode, couleur, arrivee, harmonie, graine, variation }, sinon null
   decalageHue: 0,        // position du curseur HUE, de -180 à +180 degrés
   intensiteGrain: 45     // curseur "Intensité du grain", de 0 à 100
 };
@@ -363,45 +362,64 @@ function mettreAJourBoutonRegenerer() {
   boutonRegenerer.title = rienAVarier ? "Rien à varier : un dégradé strict est toujours le même" : "";
 }
 
-// Affiche la palette calculée par couleurBase.js (le résultat montré dans l'aperçu du sélecteur).
-// Le "mood" est ici une fiche fabriquée à partir de la couleur : Régénérer (via
-// CouleurBase), la barre Teinte, le dégradé et les exports s'en servent comme pour un mood.
-function appliquerCouleurBase(choix) {
-  var resultat = choix.resultat;
+// Calcule la palette de la couleur de base (couleurBase.js) et met la page à jour.
+// "etat.base" garde tout ce qu'il faut pour retrouver la même palette : le mode, les
+// couleurs, la GRAINE du hasard (même graine = mêmes nuances, donc pas de scintillement
+// quand on déplace la roue) et l'harmonie tirée.
+// Le "mood" est ici une fiche fabriquée à partir de la couleur : la barre Teinte, le
+// dégradé et les exports s'en servent comme pour un mood.
+function afficherCouleurBase() {
+  var resultat = CouleurBase.generer(etat.base);
+  etat.base.graine = resultat.graine;
+  etat.base.harmonie = resultat.harmonie;   // l'harmonie tirée est gardée tant qu'on ne demande pas d'autres couleurs
+
   etat.moodPrincipal = resultat.fiche;
   etat.moodAccent = null;
-  etat.base = { mode: choix.mode, couleur: choix.couleur, arrivee: choix.arrivee };
   definirPalette(resultat.seize, resultat.neuf);
-
   titrePalette.textContent = resultat.titre;
-  titrePalette.classList.remove("visuellement-cache");   // il a pu être caché par une image
-  blocImage.hidden = true;
-  champMood.value = "";
-  afficherMessage("Palette créée à partir de ta couleur " + choix.couleur + ". Régénérer propose une variation.");
-  mettreAJourBoutonRegenerer();
+  mettreAJourBoutonRegenerer();   // grisé en mode "dégradé"
   rafraichir();
-
-  // Sur mobile la palette est sous la carte : on l'amène à l'écran (sans animation si l'utilisateur la désactive).
-  var sansAnimation = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  blocPalette.scrollIntoView({ behavior: sansAnimation ? "auto" : "smooth", block: "nearest" });
 }
 
-SelecteurCouleur.surApplication(appliquerCouleurBase);
+// Le sélecteur de couleur a bougé : la palette de la page le suit, en direct.
+// Au premier geste (ou si on change de mode), c'est lui qui reprend la main sur le mood
+// ou l'image, avec une nouvelle graine.
+function suivreSelecteur(choix) {
+  var premierGeste = !etat.base;
+  var autreMode = !premierGeste && etat.base.mode !== choix.mode;
 
-// Régénérer une palette de couleur de base : nouvelle harmonie (la couleur reste la même)
-// ou léger jeu sur le camaïeu.
+  etat.base = {
+    mode: choix.mode,
+    couleur: choix.couleur,
+    arrivee: choix.arrivee,
+    harmonie: (premierGeste || autreMode) ? null : etat.base.harmonie,
+    graine: (premierGeste || autreMode) ? undefined : etat.base.graine,   // undefined : une nouvelle graine sera tirée
+    variation: (premierGeste || autreMode) ? 0 : etat.base.variation
+  };
+
+  if (premierGeste) {
+    titrePalette.classList.remove("visuellement-cache");   // il a pu être caché par une image
+    blocImage.hidden = true;
+    champMood.value = "";
+    afficherMessage("Palette calculée à partir de ta couleur. Régénérer propose une variation.");
+  }
+  afficherCouleurBase();
+}
+
+// Une autre harmonie (la couleur reste la même) ou un autre jeu de nuances en camaïeu :
+// on change la graine du hasard. C'est le rôle de « Régénérer » et de « Autres couleurs ».
 function regenererCouleurBase() {
-  var resultat = CouleurBase.generer({
-    mode: etat.base.mode,
-    couleur: etat.base.couleur,
-    arrivee: etat.base.arrivee,
-    harmonie: null,   // en mode "harmonie" : une autre harmonie est tirée au hasard
-    variation: 1      // en mode "camaïeu" : léger jeu sur les nuances
-  });
-  etat.moodPrincipal = resultat.fiche;
-  definirPalette(resultat.seize, resultat.neuf);
-  titrePalette.textContent = resultat.titre;
+  etat.base.graine = undefined;   // une nouvelle graine sera tirée
+  etat.base.harmonie = null;      // en mode "harmonie" : une autre harmonie est tirée
+  etat.base.variation = 1;        // en mode "camaïeu" : léger jeu sur les nuances
+  afficherCouleurBase();
 }
+
+SelecteurCouleur.surChangement(suivreSelecteur);
+SelecteurCouleur.surAutresCouleurs(function () {
+  if (etat.base) regenererCouleurBase();
+  else suivreSelecteur(SelecteurCouleur.lire());   // pas encore pris la main : on la prend
+});
 
 
 /* ---------- Bouton Régénérer ---------- */
@@ -410,11 +428,11 @@ boutonRegenerer.addEventListener("click", function () {
   if (boutonRegenerer.getAttribute("aria-disabled") === "true") return;
 
   if (etat.base) {
-    regenererCouleurBase();
+    regenererCouleurBase();   // se redessine tout seul
   } else {
     definirPalette(Palette.generer(etat.moodPrincipal, etat.moodAccent));
+    rafraichir();
   }
-  rafraichir();
 });
 
 
@@ -438,7 +456,6 @@ choixGrille.addEventListener("click", function (evenement) {
     bouton.setAttribute("aria-checked", bouton === option ? "true" : "false");
   });
   mettreAJourDescriptionsExports(etat.nombreDeCases);
-  SelecteurCouleur.definirNombre(etat.nombreDeCases);   // l'aperçu du sélecteur de couleur suit la grille
   rafraichir();
 });
 

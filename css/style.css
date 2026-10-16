@@ -488,49 +488,8 @@ body {
   padding-right: 8px;
 }
 
-/* Aperçu de la palette calculée */
-.base__resultat {
-  margin-top: 24px;
-}
-
-.base__resultat-entete {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.base__resultat-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.base__resultat-titre {
-  font-weight: 600;
-  color: var(--texte-doux);
-}
-
-.base__apercu {
-  display: grid;
-  grid-template-columns: repeat(9, 1fr);
-  gap: 6px;
-}
-
-.base__apercu--16 {
-  grid-template-columns: repeat(8, 1fr);
-}
-
-.base__apercu--attente {
-  opacity: 0.45;            /* l'aperçu n'est pas à jour pendant qu'on glisse (harmonie) */
-}
-
-.base__apercu-case {
-  aspect-ratio: 1 / 1;
-  border-radius: 8px;
-  border: 1px solid var(--bordure);
+.base__autres {
+  align-self: flex-start;
 }
 
 .case {
@@ -814,13 +773,6 @@ body {
     justify-content: center;
   }
 
-  .base__apercu {
-    gap: 4px;
-  }
-
-  .base__apercu-case {
-    border-radius: 5px;
-  }
 
   .grille--4x4 .case__hex {
     left: 5px;

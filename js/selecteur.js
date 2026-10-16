@@ -2,8 +2,8 @@
    selecteur.js — le sélecteur de couleur de base
    ---------------------------------------------------------
    Une roue chromatique (dessinée dans un <canvas>), un curseur de
-   luminosité, un champ HEX, le choix du mode (camaïeu, dégradé,
-   harmonie) et un aperçu de la palette calculée par couleurBase.js.
+   luminosité, un champ HEX et le choix du mode (camaïeu, dégradé,
+   harmonie).
 
    - La ROUE donne la teinte (l'angle) et la saturation (la distance
      au centre). La luminosité se règle avec le curseur : la roue est
@@ -11,9 +11,10 @@
    - En mode "dégradé", il y a DEUX couleurs (départ et arrivée) : les
      boutons Départ / Arrivée disent laquelle la roue modifie.
 
-   Ce fichier ne touche pas à la palette de la page : quand on clique sur
-   « Utiliser cette palette », il prévient l'appli par une fonction
-   (voir surApplication), qui décide quoi faire.
+   Ce fichier ne calcule pas la palette : à chaque geste, il prévient l'appli
+   par une fonction (voir surChangement). C'est elle qui calcule la palette
+   (couleurBase.js) et met à jour la page, en direct. Au chargement, le
+   sélecteur ne change rien : il ne prend la main qu'au premier geste.
    ========================================================= */
 
 var SelecteurCouleur = (function () {
@@ -41,9 +42,6 @@ var SelecteurCouleur = (function () {
   var choixMode = document.getElementById("choix-mode");
   var choixCible = document.getElementById("base-cibles");
   var zoneAutreHarmonie = document.getElementById("bouton-autre-harmonie");
-  var boutonUtiliser = document.getElementById("bouton-utiliser-palette");
-  var titreApercu = document.getElementById("base-titre");
-  var apercu = document.getElementById("base-apercu");
 
 
   /* ---------- L'état du sélecteur ---------- */
@@ -52,13 +50,12 @@ var SelecteurCouleur = (function () {
     mode: "camaieu",                                    // "camaieu", "degrade" ou "harmonie"
     cible: "depart",                                    // la couleur que la roue modifie : "depart" ou "arrivee"
     depart: Couleurs.hexVersHsl(COULEUR_DEPART_PAR_DEFAUT),     // { h, s, l }
-    arrivee: Couleurs.hexVersHsl(COULEUR_ARRIVEE_PAR_DEFAUT),
-    harmonie: null,                                     // l'harmonie tirée au hasard (mode "harmonie")
-    nombre: 9,                                          // 9 (grille 3x3) ou 16 (grille 4x4)
-    resultat: null                                      // la dernière palette calculée
+    arrivee: Couleurs.hexVersHsl(COULEUR_ARRIVEE_PAR_DEFAUT)
   };
   var luminositeDessinee = null;   // la luminosité avec laquelle la roue est dessinée
-  var quandOnApplique = null;      // la fonction à prévenir (voir surApplication)
+  var quandCaChange = null;        // la fonction à prévenir à chaque geste (voir surChangement)
+  var quandAutresCouleurs = null;  // la fonction à prévenir pour « Autres couleurs »
+  var envoiPrevu = false;          // un envoi est déjà prévu à la prochaine image
 
 
   /* ---------- Petits outils ---------- */
@@ -183,47 +180,35 @@ var SelecteurCouleur = (function () {
   }
 
 
-  /* ---------- 3. L'aperçu de la palette ---------- */
+  /* ---------- 3. Prévenir l'appli ---------- */
 
-  // Calcule la palette. En mode "harmonie", les couleurs sont tirées au hasard :
-  // on ne recalcule donc qu'à la fin d'un geste ("valider"), pas pendant qu'on
-  // fait glisser la souris (sinon l'aperçu scintillerait).
-  function recalculerApercu(valider) {
-    if (etat.mode === "harmonie" && !valider && etat.resultat) {
-      apercu.classList.add("base__apercu--attente");
-      return;
-    }
-    apercu.classList.remove("base__apercu--attente");
-
-    etat.resultat = CouleurBase.generer({
+  // L'état courant (sans modifier le sélecteur).
+  function lire() {
+    return {
       mode: etat.mode,
       couleur: hex(etat.depart),
-      arrivee: hex(etat.arrivee),
-      harmonie: etat.harmonie
-    });
-    etat.harmonie = etat.resultat.harmonie;   // on garde la même harmonie jusqu'à "Autres couleurs"
-    dessinerApercu();
+      arrivee: hex(etat.arrivee)
+    };
   }
 
-  function dessinerApercu() {
-    var couleurs = etat.nombre === 16 ? etat.resultat.seize : etat.resultat.neuf;
-    titreApercu.textContent = etat.resultat.titre;
-    apercu.classList.toggle("base__apercu--16", etat.nombre === 16);
-    apercu.textContent = "";
-    couleurs.forEach(function (couleur) {
-      var case_ = document.createElement("span");
-      case_.className = "base__apercu-case";
-      case_.style.background = hex(couleur.hsl);
-      case_.title = couleur.libelle + " " + hex(couleur.hsl);
-      apercu.appendChild(case_);
+  // Prévient l'appli qu'une couleur ou un réglage a changé. Pendant qu'on fait glisser
+  // la souris, les événements arrivent bien plus vite que l'écran ne se rafraîchit :
+  // on ne prévient donc qu'UNE fois par image (requestAnimationFrame), avec l'état le
+  // plus récent. La roue reste fluide, même si la palette et le dégradé se redessinent.
+  function prevenir() {
+    if (envoiPrevu || !quandCaChange) return;
+    envoiPrevu = true;
+    requestAnimationFrame(function () {
+      envoiPrevu = false;
+      quandCaChange(lire());
     });
   }
 
-  // Une couleur ou un réglage a changé : on met tout à jour.
-  // "valider" vaut vrai à la fin d'un geste (relâcher la souris, taper un HEX, changer de mode…).
-  function appliquer(valider, sauterChampHex) {
+  // Une couleur ou un réglage a changé par un geste de l'utilisateur :
+  // on met à jour l'affichage du sélecteur, puis on prévient l'appli.
+  function appliquer(sauterChampHex) {
     afficherCouleurActive(sauterChampHex);
-    recalculerApercu(valider);
+    prevenir();
   }
 
 
@@ -238,19 +223,17 @@ var SelecteurCouleur = (function () {
     roue.setPointerCapture(evenement.pointerId);
     roue.focus();
     pointerSurLaRoue(evenement);
-    appliquer(false);
+    appliquer();
   });
 
   roue.addEventListener("pointermove", function (evenement) {
     if (!enGlissement) return;
     pointerSurLaRoue(evenement);
-    appliquer(false);
+    appliquer();
   });
 
   function finirGlissement() {
-    if (!enGlissement) return;
     enGlissement = false;
-    appliquer(true);
   }
   roue.addEventListener("pointerup", finirGlissement);
   roue.addEventListener("pointercancel", finirGlissement);
@@ -265,16 +248,13 @@ var SelecteurCouleur = (function () {
     else if (evenement.key === "ArrowDown") couleur.s = Couleurs.limiter(couleur.s - pas, 0, 100);
     else return;
     evenement.preventDefault();
-    appliquer(true);
+    appliquer();
   });
 
-  // Le curseur de luminosité : en continu pendant qu'on le déplace, validé au relâchement.
+  // Le curseur de luminosité : la palette suit en continu pendant qu'on le déplace.
   curseurLuminosite.addEventListener("input", function () {
     couleurActive().l = Number(curseurLuminosite.value);
-    appliquer(false);
-  });
-  curseurLuminosite.addEventListener("change", function () {
-    appliquer(true);
+    appliquer();
   });
 
   // Le champ HEX : dès que le code est valide, la couleur est appliquée.
@@ -287,7 +267,7 @@ var SelecteurCouleur = (function () {
     var texte = champHex.value.trim();
     var couleur = Couleurs.hexVersHsl(texte.charAt(0) === "#" ? texte : "#" + texte);
     etat[etat.cible] = couleur;
-    appliquer(true, true);   // true : on ne réécrit pas le champ pendant que l'utilisateur tape
+    appliquer(true);   // true : on ne réécrit pas le champ pendant que l'utilisateur tape
   });
   // En sortant du champ, on remet un HEX propre ("5188f5" → "#5188F5", ou l'ancien si invalide).
   champHex.addEventListener("blur", function () {
@@ -300,9 +280,8 @@ var SelecteurCouleur = (function () {
     var bouton = evenement.target.closest("[data-mode]");
     if (!bouton) return;
     etat.mode = bouton.dataset.mode;
-    etat.harmonie = null;   // une nouvelle harmonie sera tirée si on passe en "harmonie"
     afficherSelonLeMode();
-    appliquer(true);
+    appliquer();
   });
 
   // Dégradé : Départ ou Arrivée, c'est la couleur que la roue modifie.
@@ -314,51 +293,35 @@ var SelecteurCouleur = (function () {
     afficherCouleurActive();
   });
 
-  // « Utiliser cette palette » : l'appli reçoit ce que montre l'aperçu.
-  boutonUtiliser.addEventListener("click", function () {
-    if (quandOnApplique && etat.resultat) quandOnApplique(lire());
-  });
-
-  // Harmonie : « Autres couleurs » tire une autre harmonie au hasard.
+  // Harmonie : « Autres couleurs » demande une autre harmonie (l'appli tire une autre graine).
   zoneAutreHarmonie.addEventListener("click", function () {
-    etat.harmonie = null;
-    appliquer(true);
+    if (quandAutresCouleurs) quandAutresCouleurs();
   });
 
 
   /* ---------- Ce que l'appli peut utiliser ---------- */
 
-  // Donne la fonction à appeler quand on clique sur « Utiliser cette palette ».
-  function surApplication(fonction) {
-    quandOnApplique = fonction;
+  // Donne la fonction à appeler à chaque geste ; elle reçoit { mode, couleur, arrivee }.
+  function surChangement(fonction) {
+    quandCaChange = fonction;
   }
 
-  // 9 (grille 3x3) ou 16 (grille 4x4) : l'aperçu suit la grille choisie.
-  function definirNombre(nombre) {
-    etat.nombre = nombre;
-    if (etat.resultat) dessinerApercu();
-  }
-
-  // L'état courant (sans modifier le sélecteur).
-  function lire() {
-    return {
-      mode: etat.mode,
-      couleur: hex(etat.depart),
-      arrivee: hex(etat.arrivee),
-      harmonie: etat.harmonie,
-      resultat: etat.resultat
-    };
+  // Donne la fonction à appeler quand on clique sur « Autres couleurs ».
+  function surAutresCouleurs(fonction) {
+    quandAutresCouleurs = fonction;
   }
 
 
   /* ---------- Démarrage ---------- */
 
+  // On prépare l'affichage, sans prévenir l'appli : la palette de la page reste celle
+  // d'avant (mood, image…) tant que l'utilisateur n'a pas touché au sélecteur.
   afficherSelonLeMode();
-  appliquer(true);
+  afficherCouleurActive();
 
   return {
-    surApplication: surApplication,
-    definirNombre: definirNombre,
+    surChangement: surChangement,
+    surAutresCouleurs: surAutresCouleurs,
     lire: lire
   };
 

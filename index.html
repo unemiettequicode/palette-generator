@@ -58,7 +58,8 @@
 
     <!-- ========== PARTIR D'UNE COULEUR ========== -->
     <!-- Carte repliable : on choisit une couleur sur la roue, puis comment
-         calculer la palette (camaïeu, dégradé entre 2 couleurs, harmonie). -->
+         calculer la palette (camaïeu, dégradé entre 2 couleurs, harmonie).
+         La palette de la page suit en direct. -->
     <details class="bloc bloc--base" id="bloc-base">
       <summary class="bloc--base__resume">Partir d'une couleur</summary>
 
@@ -97,19 +98,10 @@
             <button class="choix-mode__option" type="button" role="radio" aria-checked="false" data-mode="degrade">Dégradé</button>
             <button class="choix-mode__option" type="button" role="radio" aria-checked="false" data-mode="harmonie">Harmonie</button>
           </div>
-        </div>
-      </div>
 
-      <!-- Aperçu de la palette calculée -->
-      <div class="base__resultat">
-        <div class="base__resultat-entete">
-          <span class="base__resultat-titre" id="base-titre"></span>
-          <div class="base__resultat-actions">
-            <button class="bouton" id="bouton-autre-harmonie" type="button" hidden>Autres couleurs</button>
-            <button class="bouton bouton--principal" id="bouton-utiliser-palette" type="button">Utiliser cette palette</button>
-          </div>
+          <!-- Harmonie : tire une autre harmonie au hasard (la couleur choisie reste la même) -->
+          <button class="bouton base__autres" id="bouton-autre-harmonie" type="button" hidden>Autres couleurs</button>
         </div>
-        <div class="base__apercu" id="base-apercu" aria-label="Aperçu de la palette"></div>
       </div>
     </details>
 

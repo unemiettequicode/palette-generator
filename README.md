@@ -45,16 +45,19 @@ sans dépendance et sans étape de construction (build).
 - **Partir d'une couleur** (carte repliable « Partir d'une couleur », sous la
   barre de recherche) : on choisit une couleur sur une **roue chromatique**
   (souris, doigt ou clavier), avec un curseur de luminosité et un champ HEX,
-  puis un mode. Un aperçu montre la palette calculée ; le bouton
-  « Utiliser cette palette » l'applique à la page.
+  puis un mode. La palette de la page, le dégradé et les exports suivent **en
+  direct** pendant qu'on bouge la roue (il n'y a qu'une seule palette). Au
+  chargement, la carte ne change rien : elle ne prend la main qu'au premier
+  geste ; taper un mood ou importer une image la rend à nouveau la main.
   - **Camaïeu** : une seule teinte, du plus foncé au plus clair. Les nuances
     foncées d'un jaune glissent vers l'ambre pour ne pas virer au kaki.
   - **Dégradé** : des étapes régulières entre deux couleurs choisies (boutons
     Départ / Arrivée : la roue modifie celle qui est sélectionnée), par le
     chemin le plus court sur le cercle chromatique.
   - **Harmonie** : la couleur choisie plus d'autres teintes tirées au hasard
-    (analogue, complémentaire, complémentaire divisée, triadique). « Autres
-    couleurs » tire une autre harmonie.
+    (analogue, complémentaire, complémentaire divisée, triadique). Les teintes
+    restent stables pendant qu'on déplace la roue (le hasard est « figé » par
+    une graine) ; « Autres couleurs » ou Régénérer tirent une autre harmonie.
   - La couleur choisie est toujours dans la palette, avec le même HEX. En
     3×3 et en 4×4, camaïeu et dégradé sont deux calculs séparés (un dégradé de
     16 étapes n'est pas celui de 9 étapes avec 7 en plus).
@@ -143,7 +146,7 @@ js/gradient.js    le dégradé canvas et le grain
 js/export.js      les exports PNG, CSS et JSON
 js/image.js       l'analyse des couleurs d'une image importée
 js/couleurBase.js le calcul d'une palette à partir d'une couleur (camaïeu, dégradé, harmonie)
-js/selecteur.js   la roue chromatique, le curseur de luminosité, le champ HEX et l'aperçu
+js/selecteur.js   la roue chromatique, le curseur de luminosité et le champ HEX
 js/app.js         l'interface : relie les boutons et curseurs aux calculs
 fonts/            emplacement de la police du titre (voir fonts/LISEZMOI.txt)
 ```

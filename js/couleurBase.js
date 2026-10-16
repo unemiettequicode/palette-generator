@@ -41,6 +41,26 @@ var CouleurBase = (function () {
 
   /* ---------- Petits outils ---------- */
 
+  // Un générateur de hasard "stable" (mulberry32) : avec la même graine (un nombre),
+  // il donne toujours la même suite de nombres entre 0 et 1. Une palette calculée avec
+  // la même graine est donc toujours la même ; une autre graine donne une autre
+  // palette. Les opérations binaires (>>>, imul) gardent les calculs sur 32 bits.
+  function creerHasard(graine) {
+    var etat = graine >>> 0;
+    return function () {
+      etat = (etat + 0x6D2B79F5) >>> 0;
+      var t = etat;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // Une nouvelle graine au hasard.
+  function nouvelleGraine() {
+    return Math.floor(Math.random() * 4294967296);
+  }
+
   // Vrai si la teinte est dans la zone des jaunes (40° à 80°) : assombris,
   // ils virent à l'olive (comme dans palette.js).
   function estUnJaune(teinte) {
@@ -93,18 +113,18 @@ var CouleurBase = (function () {
     return teinteBase + (30 - teinteBase) * glissement;
   }
 
-  // Un petit écart au hasard, entre -amplitude et +amplitude.
-  function ecartAleatoire(amplitude) {
-    return (Math.random() * 2 - 1) * amplitude;
-  }
 
   // "nombre" nuances de la même teinte, de la plus foncée à la plus claire.
   // La nuance la plus proche de la couleur de base est remplacée par elle-même, exacte.
   // "variation" (0 = aucune, 1 = normale) ajoute un léger jeu au hasard sur la
   // saturation (±6 points) et la teinte (±2°) des autres nuances : c'est ce que
   // fait « Régénérer ». Sans variation, le résultat est toujours le même.
-  function genererCamaieu(hexBase, nombre, variation) {
+  function genererCamaieu(hexBase, nombre, variation, hasard) {
     var base = Couleurs.hexVersHsl(hexBase);
+    // Un petit écart au hasard, entre -amplitude et +amplitude.
+    function ecartAleatoire(amplitude) {
+      return (hasard() * 2 - 1) * amplitude;
+    }
     var pas = (LUMINOSITE_CAMAIEU_MAX - LUMINOSITE_CAMAIEU_MIN) / (nombre - 1);
     var rangBase = Couleurs.limiter(Math.round((base.l - LUMINOSITE_CAMAIEU_MIN) / pas), 0, nombre - 1);
 
@@ -209,13 +229,13 @@ var CouleurBase = (function () {
   // 16 couleurs : les 9 de base du moteur, puis ses 7 nuances. La "Dominante"
   // est remplacée par la couleur choisie, exacte. Les 9 premières forment
   // donc la palette 3x3, comme pour un mood.
-  function genererHarmonie(hexBase, nomHarmonie, titre) {
+  function genererHarmonie(hexBase, nomHarmonie, titre, hasard) {
     var base = Couleurs.hexVersHsl(hexBase);
-    var signe = Math.random() < 0.5 ? -1 : 1;
+    var signe = hasard() < 0.5 ? -1 : 1;
     var ecartAccent = HARMONIES[nomHarmonie].ecartAccent * signe;
 
     var fiche = creerFiche(base, nomHarmonie, ecartAccent, titre);
-    var palette = Palette.generer(fiche, null);
+    var palette = Palette.generer(fiche, null, hasard);
     palette[2] = creerCouleur("moyen", "Couleur de base", base);
     return { palette: palette, fiche: fiche };
   }
@@ -230,17 +250,22 @@ var CouleurBase = (function () {
   // - harmonie : (mode "harmonie", facultatif) "analogue", "complementaire",
   //              "complementaire-divisee" ou "triadique". Sinon : tirée au hasard.
   // - variation: (mode "camaieu", facultatif) 0 par défaut ; 1 = léger jeu au hasard
+  // - graine   : (facultatif) un nombre qui fixe le hasard : même graine, même palette.
+  //              Sans graine, une nouvelle est tirée. Elle est renvoyée dans le résultat.
   // Renvoie :
   // {
   //   neuf:  les 9 couleurs de la grille 3x3,
   //   seize: les 16 couleurs de la grille 4x4,
   //   fiche: une fiche au format de moods.js (nom, id, composition du dégradé…),
   //   titre: un titre lisible, ex : "Camaïeu #5188F5",
-  //   harmonie: le nom de l'harmonie utilisée (mode "harmonie"), sinon null
+  //   harmonie: le nom de l'harmonie utilisée (mode "harmonie"), sinon null,
+  //   graine: la graine utilisée (à redonner pour retrouver la même palette)
   // }
   function generer(options) {
     var hex = hexAffichable(options.couleur);
     var base = Couleurs.hexVersHsl(hex);
+    var graine = options.graine === undefined || options.graine === null ? nouvelleGraine() : options.graine;
+    var hasard = creerHasard(graine);
 
     if (options.mode === "degrade") {
       var arrivee = hexAffichable(options.arrivee);
@@ -250,33 +275,36 @@ var CouleurBase = (function () {
         seize: genererDegrade(hex, arrivee, 16),
         fiche: creerFiche(base, "analogue", 30, titreDegrade),
         titre: titreDegrade,
-        harmonie: null
+        harmonie: null,
+        graine: graine
       };
     }
 
     if (options.mode === "harmonie") {
       var nomHarmonie = HARMONIES[options.harmonie]
         ? options.harmonie
-        : NOMS_HARMONIES[Math.floor(Math.random() * NOMS_HARMONIES.length)];
+        : NOMS_HARMONIES[Math.floor(hasard() * NOMS_HARMONIES.length)];
       var titreHarmonie = "Harmonie " + HARMONIES[nomHarmonie].libelle + " " + hex;
-      var resultat = genererHarmonie(hex, nomHarmonie, titreHarmonie);
+      var resultat = genererHarmonie(hex, nomHarmonie, titreHarmonie, hasard);
       return {
         neuf: resultat.palette.slice(0, 9),
         seize: resultat.palette,
         fiche: resultat.fiche,
         titre: titreHarmonie,
-        harmonie: nomHarmonie
+        harmonie: nomHarmonie,
+        graine: graine
       };
     }
 
     // Par défaut : le camaïeu
     var titreCamaieu = "Camaïeu " + hex;
     return {
-      neuf: genererCamaieu(hex, 9, options.variation || 0),
-      seize: genererCamaieu(hex, 16, options.variation || 0),
+      neuf: genererCamaieu(hex, 9, options.variation || 0, hasard),
+      seize: genererCamaieu(hex, 16, options.variation || 0, hasard),
       fiche: creerFiche(base, "analogue", 30, titreCamaieu),
       titre: titreCamaieu,
-      harmonie: null
+      harmonie: null,
+      graine: graine
     };
   }
 

@@ -37,14 +37,24 @@ var Palette = (function () {
 
   /* ---------- Aléatoire contrôlé ---------- */
 
+  // Par défaut, le vrai hasard (Math.random). generer() peut recevoir à la place un
+  // générateur "stable" (voir couleurBase.js) : avec la même graine, mêmes tirages,
+  // donc même palette. C'est ce qui évite que la palette scintille quand on déplace
+  // la couleur de base sur la roue.
+  var generateurImpose = null;
+
+  function aleatoire() {
+    return generateurImpose ? generateurImpose() : Math.random();
+  }
+
   // Un nombre au hasard entre min et max. Ex : tirer([20, 40]) → 31.7
   function tirer(plage) {
-    return plage[0] + Math.random() * (plage[1] - plage[0]);
+    return plage[0] + aleatoire() * (plage[1] - plage[0]);
   }
 
   // Une petite variation autour d'une valeur. Ex : varier(180, 5) → entre 175 et 185
   function varier(valeur, amplitude) {
-    return valeur + (Math.random() * 2 - 1) * amplitude;
+    return valeur + (aleatoire() * 2 - 1) * amplitude;
   }
 
   // Un point précis d'une plage : 0 = le minimum, 1 = le maximum, 0.5 = le milieu.
@@ -226,19 +236,26 @@ var Palette = (function () {
   // Génère les 16 couleurs d'un mood : les 9 de base, puis 7 nuances.
   // - mood       : la fiche du mood principal (voir moods.js)
   // - moodAccent : un second mood qui influence l'accent, ou null
+  // - generateur : (facultatif) une fonction qui donne des nombres entre 0 et 1 à la
+  //                place de Math.random. Sans lui, le comportement est inchangé.
   // Renvoie un tableau de 16 couleurs. Les 9 premières, dans l'ordre d'affichage
   // de la grille 3x3 : 2 sombres, 3 moyens, 2 accents, 2 clairs. Les 7 suivantes
   // complètent la grille 4x4. L'appli affiche les 9 premières ou les 16.
-  function generer(mood, moodAccent) {
-    var teinteDominante = tirer(mood.teinte);
+  function generer(mood, moodAccent, generateur) {
+    generateurImpose = generateur || null;
+    try {
+      var teinteDominante = tirer(mood.teinte);
 
-    var base = []
-      .concat(creerSombres(mood, teinteDominante))
-      .concat(creerTonsMoyens(mood, teinteDominante))
-      .concat(creerAccents(mood, teinteDominante, moodAccent))
-      .concat(creerClairs(mood, teinteDominante));
+      var base = []
+        .concat(creerSombres(mood, teinteDominante))
+        .concat(creerTonsMoyens(mood, teinteDominante))
+        .concat(creerAccents(mood, teinteDominante, moodAccent))
+        .concat(creerClairs(mood, teinteDominante));
 
-    return base.concat(creerNuances(base));
+      return base.concat(creerNuances(base));
+    } finally {
+      generateurImpose = null;   // dans tous les cas, on revient au vrai hasard
+    }
   }
 
   /* ---------- Fiche sur mesure (ex : depuis une image importée) ---------- */

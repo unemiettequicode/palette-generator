@@ -147,6 +147,36 @@ body {
   outline: none;
 }
 
+/* Aperçu de l'image importée, sous la barre de recherche */
+.image-importee {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px 0 0;
+}
+
+.image-importee[hidden] {
+  display: none;
+}
+
+.image-importee__vignette {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;          /* recadre sans déformer */
+  border-radius: var(--rayon-moyen);
+  border: 1px solid var(--bordure);
+}
+
+.image-importee__nom {
+  max-width: 60%;
+  overflow: hidden;
+  color: var(--texte-doux);
+  font-size: 0.9rem;
+  text-overflow: ellipsis;    /* nom trop long → "…" */
+  white-space: nowrap;
+}
+
 .message {
   min-height: 1.5em;
   margin: 12px 0 0;
@@ -396,6 +426,7 @@ body {
 
   .entete,
   .recherche,
+  .image-importee,
   .message {
     max-width: 760px;
     margin-left: auto;
@@ -444,6 +475,21 @@ body {
   .hue {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  /* Barre de recherche : le champ sur toute la largeur,
+     les boutons Importer / Générer en dessous */
+  .recherche {
+    flex-wrap: wrap;
+    border-radius: var(--rayon-grand);
+  }
+
+  .recherche__champ {
+    flex-basis: 100%;
+  }
+
+  .recherche .bouton {
+    flex: 1;
   }
 
   .export {

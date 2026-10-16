@@ -19,6 +19,11 @@ var boutonResetHue = document.getElementById("bouton-reset-hue");
 var canvasDegrade = document.getElementById("canvas-degrade");
 var curseurGrain = document.getElementById("curseur-grain");
 var valeurGrain = document.getElementById("valeur-grain");
+var boutonImporter = document.getElementById("bouton-importer");
+var champImage = document.getElementById("champ-image");
+var blocImage = document.getElementById("image-importee");
+var vignetteImage = document.getElementById("vignette-image");
+var nomImage = document.getElementById("nom-image");
 
 
 /* ---------- État de l'application ---------- */
@@ -178,6 +183,41 @@ function lancerRecherche(texte) {
 formulaireRecherche.addEventListener("submit", function (evenement) {
   evenement.preventDefault();   // empêche le rechargement de la page
   lancerRecherche(champMood.value);
+});
+
+
+/* ---------- Import d'une image ---------- */
+
+// Le bouton "Importer" ouvre le sélecteur de fichier (caché).
+boutonImporter.addEventListener("click", function () {
+  champImage.click();
+});
+
+// Affiche la vignette de l'image choisie, pour confirmer qu'elle est bien lue.
+function afficherImageImportee(fichier) {
+  // Libère l'adresse de l'image précédente (elle occupe de la mémoire)
+  if (vignetteImage.src) {
+    URL.revokeObjectURL(vignetteImage.src);
+  }
+  // Une adresse temporaire qui pointe vers le fichier choisi, sans l'envoyer nulle part
+  vignetteImage.src = URL.createObjectURL(fichier);
+  nomImage.textContent = fichier.name;
+  blocImage.hidden = false;
+}
+
+// "change" : l'utilisateur a choisi un fichier dans le sélecteur.
+champImage.addEventListener("change", function () {
+  var fichier = champImage.files[0];
+  if (!fichier) return;   // sélecteur fermé sans choisir
+
+  if (fichier.type.indexOf("image/") !== 0) {
+    afficherMessage("Ce fichier n'est pas une image. Choisis un JPG, un PNG ou un WebP.");
+    return;
+  }
+
+  afficherImageImportee(fichier);
+  // Remis à zéro : choisir deux fois de suite la même image redéclenche "change".
+  champImage.value = "";
 });
 
 

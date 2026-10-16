@@ -26,7 +26,8 @@ var valeurGrain = document.getElementById("valeur-grain");
 var etat = {
   moodPrincipal: null,   // le mood qui domine la palette
   moodAccent: null,      // le second mood, qui influence l'accent (ou null)
-  paletteDeBase: [],     // les 9 couleurs générées (avant tout décalage HUE)
+  paletteDeBase: [],     // les 16 couleurs générées (avant tout décalage HUE)
+  nombreDeCases: 9,      // combien on en affiche : 9 (grille 3x3) ou 16 (grille 4x4)
   decalageHue: 0,        // position du curseur HUE, de -180 à +180 degrés
   intensiteGrain: 45     // curseur "Intensité du grain", de 0 à 100
 };
@@ -36,8 +37,9 @@ var etat = {
 
 // La palette réellement affichée : la palette de base, tournée du décalage HUE.
 // On repart TOUJOURS de la base : les décalages ne se cumulent jamais.
+// Seules les premières couleurs sont gardées (9 ou 16, selon la grille choisie).
 function paletteAffichee() {
-  return etat.paletteDeBase.map(function (couleur) {
+  return etat.paletteDeBase.slice(0, etat.nombreDeCases).map(function (couleur) {
     return {
       role: couleur.role,
       libelle: couleur.libelle,

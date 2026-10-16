@@ -178,8 +178,56 @@ var ImageCouleurs = (function () {
     });
   }
 
+  /* ---------- Des couleurs de l'image aux paramètres de palette ---------- */
+
+  // Choisit l'harmonie selon l'écart entre la dominante et la secondaire :
+  // - moins de 60°          → analogue (couleurs voisines)
+  // - de 60° à moins de 150° → complémentaire divisée
+  // - 150° et plus          → complémentaire (couleurs opposées)
+  function choisirHarmonie(ecart) {
+    if (ecart < 60) return "analogue";
+    if (ecart < 150) return "complementaire-divisee";
+    return "complementaire";
+  }
+
+  // Écart SIGNÉ de la dominante vers la secondaire, entre -180° et +180°
+  // (le signe dit dans quel sens tourner sur le cercle).
+  function ecartSigne(depart, arrivee) {
+    var ecart = ((arrivee - depart) % 360 + 360) % 360;
+    return ecart > 180 ? ecart - 360 : ecart;
+  }
+
+  // Traduit le résultat de analyser() en paramètres pour Palette.ficheDepuisParametres().
+  function parametresPalette(analyse) {
+    // Image noir et blanc : pas de teinte. On fait une palette de gris
+    // légèrement réchauffés (teinte 30°, saturation très basse).
+    if (analyse.teinteDominante === null) {
+      return { teinte: 30, harmonie: "analogue", saturation: 4, ecartAccent: -20,
+               nom: "Image importée", id: "image" };
+    }
+
+    var ecart = ecartSigne(analyse.teinteDominante, analyse.teinteSecondaire);
+    // Image monochrome (secondaire = dominante) : accent voisin plutôt qu'identique.
+    // On tourne de 30°, mais pas vers les jaunes (40-80°) : assombris, ils
+    // virent au kaki. Dans ce cas, on tourne dans l'autre sens.
+    if (Math.abs(ecart) < 15) {
+      var versLesJaunes = Couleurs.normaliserTeinte(analyse.teinteDominante + 30);
+      ecart = (versLesJaunes >= 40 && versLesJaunes <= 80) ? -30 : 30;
+    }
+
+    return {
+      teinte: analyse.teinteDominante,
+      harmonie: choisirHarmonie(Math.abs(ecart)),
+      saturation: analyse.saturationMoyenne,
+      ecartAccent: ecart,   // la secondaire de l'image colore l'accent
+      nom: "Image importée",
+      id: "image"
+    };
+  }
+
   return {
     analyser: analyser,
+    parametresPalette: parametresPalette,
     ecartDeTeinte: ecartDeTeinte
   };
 

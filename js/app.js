@@ -126,6 +126,8 @@ function choisirMoods(principal, accent, motPartage) {
   etat.moodAccent = accent;
 
   titrePalette.textContent = principal.nom;
+  titrePalette.classList.remove("visuellement-cache");   // il a pu être caché par une image
+  blocImage.hidden = true;                                // on n'est plus sur l'image importée
 
   var texte = "";
   if (accent) {
@@ -221,8 +223,8 @@ champImage.addEventListener("change", function () {
 
   mettreImportEnCours(true);
   ImageCouleurs.analyser(fichier)
-    .then(function (resultat) {
-      afficherAnalyseTemporaire(resultat);
+    .then(function (analyse) {
+      choisirImage(analyse);
     })
     .catch(function () {
       afficherMessage("Impossible de lire cette image. Essaie avec un autre fichier.");
@@ -239,26 +241,24 @@ function mettreImportEnCours(enCours) {
   boutonImporter.setAttribute("aria-busy", enCours ? "true" : "false");
 }
 
-// TEMPORAIRE (étape 2) : montre les valeurs extraites, pour vérifier qu'elles
-// ont du sens. Sera remplacé à l'étape 3 par la génération de la palette.
-function afficherAnalyseTemporaire(resultat) {
-  console.log("Analyse de l'image :", resultat);
+// Génère la palette à partir de l'analyse d'une image.
+// Même moteur que pour un mood : on fabrique une fiche "sur mesure"
+// (Palette.ficheDepuisParametres) et on la garde comme mood en cours.
+// Régénérer, la barre HUE, le dégradé et les exports s'en servent tels quels.
+function choisirImage(analyse) {
+  var fiche = Palette.ficheDepuisParametres(ImageCouleurs.parametresPalette(analyse));
+  etat.moodPrincipal = fiche;
+  etat.moodAccent = null;   // l'accent vient déjà de la teinte secondaire de l'image
 
-  if (resultat.teinteDominante === null) {
-    afficherMessage("Analyse : image sans couleur dominante (noir et blanc). Saturation moyenne " +
-      Math.round(resultat.saturationMoyenne) + " %.");
-    return;
-  }
-  afficherMessage("Analyse : dominante " + Math.round(resultat.teinteDominante) + "°, secondaire " +
-    Math.round(resultat.teinteSecondaire) + "°, saturation moyenne " +
-    Math.round(resultat.saturationMoyenne) + " %");
+  // Le nom de mood ne s'affiche pas quand l'image est la source.
+  // Le titre reste lisible par les lecteurs d'écran (caché visuellement seulement).
+  titrePalette.textContent = "Palette de l'image importée";
+  titrePalette.classList.add("visuellement-cache");
+  champMood.value = "";
+  afficherMessage("Palette créée à partir de ton image. Régénérer propose une variation.");
 
-  [resultat.teinteDominante, resultat.teinteSecondaire].forEach(function (teinte) {
-    var pastille = document.createElement("span");
-    pastille.style.cssText = "display:inline-block;width:1em;height:1em;margin-left:6px;" +
-      "border-radius:50%;vertical-align:-0.15em;background:hsl(" + teinte + ", 70%, 55%)";
-    zoneMessage.appendChild(pastille);
-  });
+  etat.paletteDeBase = Palette.generer(fiche, null);
+  rafraichir();
 }
 
 

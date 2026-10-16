@@ -240,6 +240,11 @@ body {
   margin-bottom: 16px;
 }
 
+/* Le bouton Régénérer reste à droite, même quand le titre est caché */
+#bouton-regenerer {
+  margin-left: auto;
+}
+
 .bloc__titre {
   margin: 0;
   font-size: 1.2rem;

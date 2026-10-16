@@ -102,6 +102,21 @@ var Palette = (function () {
     // contrepoint discret (ex : le gris-vert "Ash Grey" du Mystérieux).
     var douceurTertiaire = mood.harmonie === "complementaire" ? 0.45 : 0.75;
 
+    // Fiche sur mesure (image importée) : chaque ton moyen a ses PROPRES plages de
+    // saturation et de luminosité, relevées dans l'image. Les moods n'ont pas
+    // ce champ et gardent le calcul habituel ci-dessous.
+    var tons = mood.tonsMoyens;
+    if (tons) {
+      return [
+        creerCouleur("moyen", "Dominante", teinteDominante,
+          tirer(tons[0].saturation), tirer(tons[0].luminosite), false),
+        creerCouleur("moyen", "Secondaire", varier(teinteDominante + ecarts[0], 6),
+          tirer(tons[1].saturation), tirer(tons[1].luminosite), false),
+        creerCouleur("moyen", "Tertiaire", varier(teinteDominante + ecarts[1], 6),
+          tirer(tons[2].saturation), tirer(tons[2].luminosite), false)
+      ];
+    }
+
     return [
       creerCouleur("moyen", "Dominante", teinteDominante,
         saturation, varier(dansLaPlage(mood.luminosite, 0.5), 3), false),
@@ -173,8 +188,61 @@ var Palette = (function () {
       .concat(creerClairs(mood, teinteDominante));
   }
 
+  /* ---------- Fiche sur mesure (ex : depuis une image importée) ---------- */
+
+  // Fabrique une fiche au même format que celles de moods.js, à partir de
+  // quelques paramètres seulement. On peut ensuite la passer à generer(),
+  // exactement comme un mood du dictionnaire.
+  // parametres :
+  // - teinte      : teinte dominante (0-360)
+  // - harmonie    : "analogue", "complementaire", "complementaire-divisee"…
+  // - saturation  : saturation de référence (0-100), ex : saturation moyenne d'une image
+  // - ecartAccent : écart de teinte entre la dominante et l'accent (en degrés)
+  // - tonsMoyens  : (facultatif) 3 réglages { saturation, luminosite } pour la dominante,
+  //                 la secondaire et la tertiaire, au lieu du calcul habituel
+  // - tonAccent   : (facultatif) { saturation, luminosite } de l'accent
+  // - nom, id     : pour l'affichage et les noms de fichiers d'export
+  function ficheDepuisParametres(parametres) {
+    // Saturation des tons moyens : on garde les mêmes bornes que les moods
+    // (de très doux à très vif), avec une plage de ±8 autour de la référence.
+    // Image désaturée → palette douce ; image vive → palette saturée.
+    var centre = Couleurs.limiter(parametres.saturation * 1.25, 8, 92);
+    function plage(min, max) {
+      return [Couleurs.limiter(min, 5, 100), Couleurs.limiter(max, 5, 100)];
+    }
+
+    // Harmonie analogue : plutôt que les écarts fixes de ±30° (qui peuvent
+    // tomber dans des couleurs absentes de la source), on suit la direction
+    // de l'accent : la secondaire à mi-chemin vers lui, la tertiaire un peu
+    // de l'autre côté. Les autres harmonies gardent leurs écarts habituels.
+    var harmonie = parametres.harmonie;
+    if (harmonie === "analogue") {
+      harmonie = [parametres.ecartAccent / 2, -parametres.ecartAccent / 3];
+    }
+
+    return {
+      nom: parametres.nom,
+      id: parametres.id,
+      teinte: [parametres.teinte - 4, parametres.teinte + 4],   // un peu de jeu pour Régénérer
+      saturation: plage(centre - 8, centre + 8),
+      luminosite: [35, 65],
+      harmonie: harmonie,
+      tonsMoyens: parametres.tonsMoyens,   // undefined si absent : calcul habituel
+      accent:  {
+        decalage: parametres.ecartAccent,
+        saturation: parametres.tonAccent ? parametres.tonAccent.saturation : plage(centre, centre + 15),
+        luminosite: parametres.tonAccent ? parametres.tonAccent.luminosite : [50, 62]
+      },
+      sombres: { decalage: 0, saturation: plage(centre * 0.5, centre * 0.8), luminosite: [6, 16] },
+      clairs:  { decalage: 0, saturation: plage(centre * 0.4, centre * 0.7), luminosite: [84, 93] },
+      composition: "halo"
+    };
+  }
+
   return {
-    generer: generer
+    generer: generer,
+    ficheDepuisParametres: ficheDepuisParametres,
+    ECARTS_HARMONIE: ECARTS_HARMONIE   // lu par image.js (placement des jaunes)
   };
 
 })();

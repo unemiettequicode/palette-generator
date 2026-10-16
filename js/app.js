@@ -21,6 +21,11 @@ var curseurGrain = document.getElementById("curseur-grain");
 var valeurGrain = document.getElementById("valeur-grain");
 var champNomExport = document.getElementById("champ-nom-export");
 var apercuNomExport = document.getElementById("apercu-nom-export");
+var boutonImporter = document.getElementById("bouton-importer");
+var champImage = document.getElementById("champ-image");
+var blocImage = document.getElementById("image-importee");
+var vignetteImage = document.getElementById("vignette-image");
+var nomImage = document.getElementById("nom-image");
 
 
 /* ---------- État de l'application ---------- */
@@ -123,6 +128,8 @@ function choisirMoods(principal, accent, motPartage) {
   etat.moodAccent = accent;
 
   titrePalette.textContent = principal.nom;
+  titrePalette.classList.remove("visuellement-cache");   // il a pu être caché par une image
+  blocImage.hidden = true;                                // on n'est plus sur l'image importée
 
   var texte = "";
   if (accent) {
@@ -181,6 +188,80 @@ formulaireRecherche.addEventListener("submit", function (evenement) {
   evenement.preventDefault();   // empêche le rechargement de la page
   lancerRecherche(champMood.value);
 });
+
+
+/* ---------- Import d'une image ---------- */
+
+// Le bouton "Importer" ouvre le sélecteur de fichier (caché).
+boutonImporter.addEventListener("click", function () {
+  champImage.click();
+});
+
+// Affiche la vignette de l'image choisie, pour confirmer qu'elle est bien lue.
+function afficherImageImportee(fichier) {
+  // Libère l'adresse de l'image précédente (elle occupe de la mémoire)
+  if (vignetteImage.src) {
+    URL.revokeObjectURL(vignetteImage.src);
+  }
+  // Une adresse temporaire qui pointe vers le fichier choisi, sans l'envoyer nulle part
+  vignetteImage.src = URL.createObjectURL(fichier);
+  nomImage.textContent = fichier.name;
+  blocImage.hidden = false;
+}
+
+// "change" : l'utilisateur a choisi un fichier dans le sélecteur.
+champImage.addEventListener("change", function () {
+  var fichier = champImage.files[0];
+  if (!fichier) return;   // sélecteur fermé sans choisir
+
+  if (fichier.type.indexOf("image/") !== 0) {
+    afficherMessage("Ce fichier n'est pas une image. Choisis un JPG, un PNG ou un WebP.");
+    return;
+  }
+
+  afficherImageImportee(fichier);
+  // Remis à zéro : choisir deux fois de suite la même image redéclenche "change".
+  champImage.value = "";
+
+  mettreImportEnCours(true);
+  ImageCouleurs.analyser(fichier)
+    .then(function (analyse) {
+      choisirImage(analyse);
+    })
+    .catch(function () {
+      afficherMessage("Impossible de lire cette image. Essaie avec un autre fichier.");
+    })
+    .then(function () {
+      mettreImportEnCours(false);   // dans tous les cas, le bouton redevient normal
+    });
+});
+
+// Petit état de chargement sur le bouton pendant l'analyse.
+function mettreImportEnCours(enCours) {
+  boutonImporter.disabled = enCours;
+  boutonImporter.textContent = enCours ? "Analyse…" : "Importer";
+  boutonImporter.setAttribute("aria-busy", enCours ? "true" : "false");
+}
+
+// Génère la palette à partir de l'analyse d'une image.
+// Même moteur que pour un mood : on fabrique une fiche "sur mesure"
+// (Palette.ficheDepuisParametres) et on la garde comme mood en cours.
+// Régénérer, la barre HUE, le dégradé et les exports s'en servent tels quels.
+function choisirImage(analyse) {
+  var fiche = Palette.ficheDepuisParametres(ImageCouleurs.parametresPalette(analyse));
+  etat.moodPrincipal = fiche;
+  etat.moodAccent = null;   // l'accent vient déjà de la teinte secondaire de l'image
+
+  // Le nom de mood ne s'affiche pas quand l'image est la source.
+  // Le titre reste lisible par les lecteurs d'écran (caché visuellement seulement).
+  titrePalette.textContent = "Palette de l'image importée";
+  titrePalette.classList.add("visuellement-cache");
+  champMood.value = "";
+  afficherMessage("Palette créée à partir de ton image. Régénérer propose une variation.");
+
+  etat.paletteDeBase = Palette.generer(fiche, null);
+  rafraichir();
+}
 
 
 /* ---------- Copie d'un HEX au clic ---------- */

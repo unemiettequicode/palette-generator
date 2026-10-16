@@ -12,6 +12,7 @@
   <script defer src="js/palette.js"></script>
   <script defer src="js/gradient.js"></script>
   <script defer src="js/export.js"></script>
+  <script defer src="js/image.js"></script>
   <script defer src="js/app.js"></script>
 </head>
 <body>
@@ -37,8 +38,18 @@
         type="search"
         placeholder="mélancolique, serein, energetic…"
       >
+      <!-- Import d'une image : le vrai sélecteur de fichier est caché,
+           le bouton "Importer" l'ouvre (plus joli qu'un champ fichier brut). -->
+      <input class="visuellement-cache" id="champ-image" type="file" accept="image/*" tabindex="-1">
+      <button class="bouton" id="bouton-importer" type="button">Importer</button>
       <button class="bouton bouton--principal" type="submit">Générer</button>
     </form>
+
+    <!-- Aperçu de l'image importée (caché tant qu'aucune image n'est choisie) -->
+    <figure class="image-importee" id="image-importee" hidden>
+      <img class="image-importee__vignette" id="vignette-image" alt="Image importée">
+      <figcaption class="image-importee__nom" id="nom-image"></figcaption>
+    </figure>
 
     <!-- Zone de message (mot inconnu, suggestions…) — vide pour l'instant -->
     <p class="message" id="message" aria-live="polite"></p>

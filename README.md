@@ -19,6 +19,29 @@ sans dépendance et sans étape de construction (build).
     le second colore l'accent.
   - Un mot qui appartient à plusieurs moods (« cannelle », « rose ») :
     un mood est tiré au hasard, les autres sont proposés en « voir aussi ».
+- **Import d'une image** (bouton « Importer ») : la palette est générée à
+  partir des couleurs de la photo, analysée localement (rien n'est envoyé).
+  - L'image est réduite à 150 px et lue en HSL ; les teintes sont regroupées
+    en familles de 15°, puis les familles voisines en « blocs » de couleur
+    (la peau, le brun et l'orange forment un seul bloc). Les pixels presque
+    noirs, blancs ou gris sont ignorés pour la teinte.
+  - Les blocs sont classés par poids visuel (nombre de pixels x saturation :
+    un vert vif compte plus qu'un brun terne). Les 4 premiers sont retenus et
+    une « pipette » relève la vraie couleur de chacun (teinte, saturation,
+    luminosité).
+  - Avec 3 ou 4 teintes : la plus présente → dominante ; la plus vive des
+    autres → accent ; les deux restantes → secondaire et tertiaire. Chaque ton
+    reprend la saturation et la luminosité relevées dans l'image (un vert
+    pastel reste pastel), avec un léger jeu à chaque « Régénérer ».
+  - Avec 1 ou 2 teintes : teinte dominante → dominante ; teinte secondaire →
+    accent. Harmonie selon l'écart entre les deux : moins de 60° analogue,
+    moins de 150° complémentaire divisée, au-delà complémentaire. La
+    saturation moyenne de l'image rend la palette plus douce ou plus vive.
+  - Dans tous les cas, un jaune est placé dans le ton clair (la tertiaire)
+    pour ne pas virer au kaki.
+  - Image noir et blanc → palette de gris légèrement réchauffés.
+  - Le nom de mood n'est pas affiché ; Régénérer, la barre Teinte, le dégradé
+    et les exports fonctionnent comme pour un mood (fichiers `mood-colors-image-…`).
 - **Palette 3×3** : 2 sombres teintés, 3 tons moyens, 2 accents, 2 clairs
   teintés. Jamais de noir ni de blanc purs. Texte noir ou blanc selon le
   contraste (formule WCAG). Clic sur une case = HEX copié.
@@ -93,6 +116,7 @@ js/moods.js       le dictionnaire des moods et la recherche
 js/palette.js     la fabrication des 9 couleurs d'un mood
 js/gradient.js    le dégradé canvas et le grain
 js/export.js      les exports PNG, CSS et JSON
+js/image.js       l'analyse des couleurs d'une image importée
 js/app.js         l'interface : relie les boutons et curseurs aux calculs
 fonts/            emplacement de la police du titre (voir fonts/LISEZMOI.txt)
 ```
@@ -103,6 +127,9 @@ ES) : c'est ce qui permet d'ouvrir la page par double-clic.
 
 ## Personnaliser
 
+- **Analyse des images** : réglages en haut de `js/image.js` (taille d'analyse,
+  largeur des familles de teintes, nombre de couleurs relevées, seuils noir /
+  blanc / gris, rayon d'un bloc de couleur).
 - **Ajouter ou affiner un mood** : `js/moods.js`. Chaque mood est une fiche
   de réglages commentée (teinte, saturation, luminosité, harmonie, accent,
   sombres, clairs, composition du dégradé) suivie de ses mots-clés.

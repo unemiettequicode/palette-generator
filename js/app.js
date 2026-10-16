@@ -19,6 +19,8 @@ var boutonResetHue = document.getElementById("bouton-reset-hue");
 var canvasDegrade = document.getElementById("canvas-degrade");
 var curseurGrain = document.getElementById("curseur-grain");
 var valeurGrain = document.getElementById("valeur-grain");
+var champNomExport = document.getElementById("champ-nom-export");
+var apercuNomExport = document.getElementById("apercu-nom-export");
 
 
 /* ---------- État de l'application ---------- */
@@ -280,19 +282,38 @@ function preparerExport(format) {
 
   if (format === "png-palette") {
     return { contenu: Export.pngPalette(couleurs, mood, etat.decalageHue),
-             nomFichier: Export.nomDeFichier(mood, "palette", "png"), type: "image/png" };
+             nomFichier: Export.nomDeFichier(champNomExport.value, "palette", "png"), type: "image/png" };
   }
   if (format === "png-degrade") {
     return { contenu: Export.pngDegrade(couleurs, mood, etat.intensiteGrain),
-             nomFichier: Export.nomDeFichier(mood, "degrade", "png"), type: "image/png" };
+             nomFichier: Export.nomDeFichier(champNomExport.value, "degrade", "png"), type: "image/png" };
   }
   if (format === "css") {
     return { contenu: Export.css(couleurs, mood, etat.decalageHue),
-             nomFichier: Export.nomDeFichier(mood, "", "css"), type: "text/css" };
+             nomFichier: Export.nomDeFichier(champNomExport.value, "", "css"), type: "text/css" };
   }
   return { contenu: Export.json(couleurs, mood, etat.moodAccent, etat.decalageHue),
-           nomFichier: Export.nomDeFichier(mood, "", "json"), type: "application/json" };
+           nomFichier: Export.nomDeFichier(champNomExport.value, "", "json"), type: "application/json" };
 }
+
+// Montre sous le champ les noms exacts des fichiers qui seront téléchargés.
+function afficherApercuNomExport() {
+  apercuNomExport.textContent = "Fichiers : " +
+    Export.nomDeFichier(champNomExport.value, "palette", "png") + ", " +
+    Export.nomDeFichier(champNomExport.value, "degrade", "png") + ", " +
+    Export.nomDeFichier(champNomExport.value, "", "css") + ", " +
+    Export.nomDeFichier(champNomExport.value, "", "json");
+}
+
+champNomExport.addEventListener("input", afficherApercuNomExport);
+
+// Champ vidé puis quitté : on remet le nom par défaut, pour qu'il soit visible.
+champNomExport.addEventListener("blur", function () {
+  if (champNomExport.value.trim() === "") {
+    champNomExport.value = Export.NOM_PAR_DEFAUT;
+    afficherApercuNomExport();
+  }
+});
 
 // Retour visuel sur le bouton : "Copié !" ou "Téléchargé !" pendant un instant.
 function confirmerSurBouton(bouton, texte) {
@@ -379,4 +400,5 @@ boutonTheme.addEventListener("click", function () {
 // On démarre avec un mood d'exemple pour que la page ne soit jamais vide.
 chargerThemeMemorise();
 afficherValeurHue();
+afficherApercuNomExport();
 choisirMoods(Moods.parId("mysterieux"), null, null);

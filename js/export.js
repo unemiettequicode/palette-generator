@@ -24,9 +24,29 @@ var Export = (function () {
     return (degres > 0 ? "+" : "") + degres + "°";
   }
 
-  // Nom de fichier : "mood-colors-dark-academia-degrade.png"
-  function nomDeFichier(mood, suffixe, extension) {
-    return "mood-colors-" + mood.id + (suffixe ? "-" + suffixe : "") + "." + extension;
+  // Nom par défaut quand l'utilisateur n'a rien choisi (ou a tout effacé)
+  var NOM_PAR_DEFAUT = "noname";
+
+  // Nettoie le nom tapé pour qu'il soit valable comme nom de fichier :
+  // accents retirés, espaces → tirets, on ne garde que lettres, chiffres, - et _.
+  // Ex : "Projet Lune été" → "Projet-Lune-ete"
+  function nettoyerNom(nom) {
+    var propre = (nom || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")    // accents
+      .trim()
+      .replace(/\s+/g, "-")                // espaces → tirets
+      .replace(/[^A-Za-z0-9_-]/g, "")       // autres caractères retirés
+      .replace(/-{2,}/g, "-")               // "--" → "-"
+      .replace(/^[-_]+|[-_]+$/g, "");       // pas de tiret au début ni à la fin
+    return propre || NOM_PAR_DEFAUT;
+  }
+
+  // Nom de fichier : "mc_" + nom choisi + suffixe éventuel.
+  // Ex : nomDeFichier("noname", "degrade", "png") → "mc_noname_degrade.png"
+  //      nomDeFichier("projet lune", "", "css")    → "mc_projet-lune.css"
+  function nomDeFichier(nomChoisi, suffixe, extension) {
+    return "mc_" + nettoyerNom(nomChoisi) + (suffixe ? "_" + suffixe : "") + "." + extension;
   }
 
   // Dessine un rectangle aux coins arrondis (ctx.roundRect n'existe pas
@@ -221,7 +241,8 @@ var Export = (function () {
     css: css,
     json: json,
     telecharger: telecharger,
-    nomDeFichier: nomDeFichier
+    nomDeFichier: nomDeFichier,
+    NOM_PAR_DEFAUT: NOM_PAR_DEFAUT
   };
 
 })();

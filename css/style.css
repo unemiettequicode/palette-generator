@@ -347,6 +347,57 @@ body {
 
 
 /* ---------- 11. Exports ---------- */
+
+/* Champ "Nom des fichiers" : le préfixe mc_ est collé au champ */
+.nom-export {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.nom-export__label {
+  font-weight: 600;
+}
+
+.nom-export__champ {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon-moyen);
+  background: var(--fond);
+  overflow: hidden;
+}
+
+.nom-export__champ:focus-within {
+  border-color: var(--texte-doux);
+}
+
+.nom-export__prefixe {
+  padding: 10px 0 10px 14px;
+  color: var(--texte-doux);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.nom-export__saisie {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px 10px 0;
+  border: none;
+  background: transparent;
+  color: var(--texte);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 1rem;
+  outline: none;
+}
+
+.nom-export__apercu {
+  margin: 0;
+  color: var(--texte-doux);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;   /* un nom très long passe à la ligne */
+}
+
 .exports {
   display: flex;
   flex-direction: column;

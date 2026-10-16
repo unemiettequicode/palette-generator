@@ -113,6 +113,16 @@
         <div class="bloc__entete">
           <h2 class="bloc__titre" id="titre-exports">Exports</h2>
         </div>
+        <!-- Nom des fichiers exportés : "mc_" + ce nom ("noname" par défaut) -->
+        <div class="nom-export">
+          <label class="nom-export__label" for="champ-nom-export">Nom des fichiers</label>
+          <div class="nom-export__champ">
+            <span class="nom-export__prefixe" aria-hidden="true">mc_</span>
+            <input class="nom-export__saisie" id="champ-nom-export" type="text" value="noname"
+                   autocomplete="off" spellcheck="false" aria-describedby="apercu-nom-export">
+          </div>
+          <p class="nom-export__apercu" id="apercu-nom-export"></p>
+        </div>
         <ul class="exports">
           <li class="export">
             <div class="export__texte">

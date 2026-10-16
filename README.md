@@ -22,12 +22,20 @@ sans dépendance et sans étape de construction (build).
 - **Import d'une image** (bouton « Importer ») : la palette est générée à
   partir des couleurs de la photo, analysée localement (rien n'est envoyé).
   - L'image est réduite à 150 px et lue en HSL ; les teintes sont regroupées
-    en familles de 15°. Les pixels presque noirs, blancs ou gris sont ignorés
-    pour la teinte.
-  - Teinte dominante → dominante de la palette ; teinte secondaire → accent ;
-    saturation moyenne → palette plus douce ou plus vive.
-  - Harmonie selon l'écart entre les deux teintes : moins de 60° analogue,
+    en familles de 15°, puis les familles voisines en « blocs » de couleur
+    (la peau, le brun et l'orange forment un seul bloc). Les pixels presque
+    noirs, blancs ou gris sont ignorés pour la teinte.
+  - Les blocs sont classés par poids visuel (nombre de pixels x saturation :
+    un vert vif compte plus qu'un brun terne). Les 4 premiers sont retenus et
+    une « pipette » relève la vraie couleur de chacun (teinte, saturation,
+    luminosité).
+  - Avec 3 ou 4 teintes : la plus présente → dominante ; la plus vive des
+    autres → accent ; les deux restantes → secondaire et tertiaire. Un jaune
+    est placé dans le ton clair pour ne pas virer au kaki.
+  - Avec 1 ou 2 teintes : teinte dominante → dominante ; teinte secondaire →
+    accent. Harmonie selon l'écart entre les deux : moins de 60° analogue,
     moins de 150° complémentaire divisée, au-delà complémentaire.
+  - Saturation moyenne de l'image → palette plus douce ou plus vive.
   - Image noir et blanc → palette de gris légèrement réchauffés.
   - Le nom de mood n'est pas affiché ; Régénérer, la barre Teinte, le dégradé
     et les exports fonctionnent comme pour un mood (fichiers `mood-colors-image-…`).
@@ -115,8 +123,8 @@ ES) : c'est ce qui permet d'ouvrir la page par double-clic.
 ## Personnaliser
 
 - **Analyse des images** : réglages en haut de `js/image.js` (taille d'analyse,
-  largeur des familles de teintes, seuils noir / blanc / gris, conditions de la
-  teinte secondaire).
+  largeur des familles de teintes, nombre de couleurs relevées, seuils noir /
+  blanc / gris, rayon d'un bloc de couleur).
 - **Ajouter ou affiner un mood** : `js/moods.js`. Chaque mood est une fiche
   de réglages commentée (teinte, saturation, luminosité, harmonie, accent,
   sombres, clairs, composition du dégradé) suivie de ses mots-clés.

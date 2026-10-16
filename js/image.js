@@ -248,6 +248,51 @@ var ImageCouleurs = (function () {
     return ecart > 180 ? ecart - 360 : ecart;
   }
 
+  // Vrai si la teinte est dans la zone des jaunes (40° à 80°) : assombris,
+  // ils virent au kaki, donc on évite de les mettre dans un ton sombre.
+  function estUnJaune(teinte) {
+    var h = Couleurs.normaliserTeinte(teinte);
+    return h >= 40 && h <= 80;
+  }
+
+  // Image riche en couleurs (3 ou 4 teintes relevées) : chaque teinte trouve sa place.
+  // - dominante          → ton moyen "Dominante"
+  // - la plus vive       → accent (un accent est une petite touche d'intensité)
+  // - les autres         → tons moyens "Secondaire" et "Tertiaire"
+  function parametresMulticolore(analyse) {
+    var dominante = analyse.teintes[0];
+    var autres = analyse.teintes.slice(1);   // de la plus présente à la moins présente
+
+    var accent = autres.reduce(function (plusVive, teinte) {
+      return teinte.saturation > plusVive.saturation ? teinte : plusVive;
+    });
+    var tonsMoyens = autres.filter(function (teinte) { return teinte !== accent; });
+
+    // Écarts (en degrés) de la dominante vers la secondaire puis la tertiaire.
+    var ecarts = tonsMoyens.map(function (teinte) {
+      return ecartSigne(dominante.teinte, teinte.teinte);
+    });
+    // Image à 3 teintes seulement : la tertiaire est une teinte intermédiaire
+    // entre la dominante et la secondaire.
+    if (ecarts.length === 1) {
+      ecarts.push(ecarts[0] / 2);
+    }
+    // La secondaire est le ton moyen le plus sombre, la tertiaire le plus clair :
+    // un jaune doit donc être en tertiaire (sinon il vire au kaki).
+    if (estUnJaune(dominante.teinte + ecarts[0]) && !estUnJaune(dominante.teinte + ecarts[1])) {
+      ecarts.reverse();
+    }
+
+    return {
+      teinte: dominante.teinte,
+      harmonie: ecarts,   // écarts sur mesure, comme les moods : [secondaire, tertiaire]
+      saturation: analyse.saturationMoyenne,
+      ecartAccent: ecartSigne(dominante.teinte, accent.teinte),
+      nom: "Image importée",
+      id: "image"
+    };
+  }
+
   // Traduit le résultat de analyser() en paramètres pour Palette.ficheDepuisParametres().
   function parametresPalette(analyse) {
     // Image noir et blanc : pas de teinte. On fait une palette de gris
@@ -257,13 +302,18 @@ var ImageCouleurs = (function () {
                nom: "Image importée", id: "image" };
     }
 
+    // 3 ou 4 teintes relevées : chacune a sa place dans la palette.
+    if (analyse.teintes.length >= 3) {
+      return parametresMulticolore(analyse);
+    }
+
+    // 1 ou 2 teintes : dominante + secondaire (qui colore l'accent).
     var ecart = ecartSigne(analyse.teinteDominante, analyse.teinteSecondaire);
     // Image monochrome (secondaire = dominante) : accent voisin plutôt qu'identique.
     // On tourne de 30°, mais pas vers les jaunes (40-80°) : assombris, ils
     // virent au kaki. Dans ce cas, on tourne dans l'autre sens.
     if (Math.abs(ecart) < 15) {
-      var versLesJaunes = Couleurs.normaliserTeinte(analyse.teinteDominante + 30);
-      ecart = (versLesJaunes >= 40 && versLesJaunes <= 80) ? -30 : 30;
+      ecart = estUnJaune(analyse.teinteDominante + 30) ? -30 : 30;
     }
 
     return {

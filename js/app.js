@@ -218,7 +218,48 @@ champImage.addEventListener("change", function () {
   afficherImageImportee(fichier);
   // Remis à zéro : choisir deux fois de suite la même image redéclenche "change".
   champImage.value = "";
+
+  mettreImportEnCours(true);
+  ImageCouleurs.analyser(fichier)
+    .then(function (resultat) {
+      afficherAnalyseTemporaire(resultat);
+    })
+    .catch(function () {
+      afficherMessage("Impossible de lire cette image. Essaie avec un autre fichier.");
+    })
+    .then(function () {
+      mettreImportEnCours(false);   // dans tous les cas, le bouton redevient normal
+    });
 });
+
+// Petit état de chargement sur le bouton pendant l'analyse.
+function mettreImportEnCours(enCours) {
+  boutonImporter.disabled = enCours;
+  boutonImporter.textContent = enCours ? "Analyse…" : "Importer";
+  boutonImporter.setAttribute("aria-busy", enCours ? "true" : "false");
+}
+
+// TEMPORAIRE (étape 2) : montre les valeurs extraites, pour vérifier qu'elles
+// ont du sens. Sera remplacé à l'étape 3 par la génération de la palette.
+function afficherAnalyseTemporaire(resultat) {
+  console.log("Analyse de l'image :", resultat);
+
+  if (resultat.teinteDominante === null) {
+    afficherMessage("Analyse : image sans couleur dominante (noir et blanc). Saturation moyenne " +
+      Math.round(resultat.saturationMoyenne) + " %.");
+    return;
+  }
+  afficherMessage("Analyse : dominante " + Math.round(resultat.teinteDominante) + "°, secondaire " +
+    Math.round(resultat.teinteSecondaire) + "°, saturation moyenne " +
+    Math.round(resultat.saturationMoyenne) + " %");
+
+  [resultat.teinteDominante, resultat.teinteSecondaire].forEach(function (teinte) {
+    var pastille = document.createElement("span");
+    pastille.style.cssText = "display:inline-block;width:1em;height:1em;margin-left:6px;" +
+      "border-radius:50%;vertical-align:-0.15em;background:hsl(" + teinte + ", 70%, 55%)";
+    zoneMessage.appendChild(pastille);
+  });
+}
 
 
 /* ---------- Copie d'un HEX au clic ---------- */

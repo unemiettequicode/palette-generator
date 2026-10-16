@@ -204,10 +204,18 @@ body {
 
 .bloc__entete {
   display: flex;
+  flex-wrap: wrap;           /* sur petit écran, les actions passent sous le titre */
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 16px;
+}
+
+/* Les boutons à droite du titre (choix de la grille, Régénérer) */
+.bloc__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .bloc__titre {
@@ -220,11 +228,49 @@ body {
   color: var(--texte-doux);
 }
 
-/* ---------- 8. Grille 3x3 de la palette ---------- */
+/* ---------- 8. Grille de la palette (3x3 ou 4x4) ---------- */
 .grille {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
+}
+
+/* 4x4 : 4 colonnes, cases plus serrées */
+.grille--4x4 {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+/* Choix 3x3 / 4x4 : deux petits boutons collés, celui choisi est plein */
+.choix-grille {
+  display: flex;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon-pilule);
+  overflow: hidden;
+}
+
+.choix-grille__option {
+  padding: 10px 14px;
+  border: none;
+  background: var(--surface);
+  color: var(--texte);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.choix-grille__option:hover {
+  background: var(--fond);
+}
+
+.choix-grille__option[aria-checked="true"] {
+  background: var(--texte);
+  color: var(--fond);
+}
+
+.choix-grille__option:focus-visible {
+  outline: 3px solid var(--texte);
+  outline-offset: -3px;
 }
 
 .case {
@@ -264,6 +310,13 @@ body {
   font-size: 0.9rem;
   font-weight: 600;
   letter-spacing: 0.03em;
+}
+
+/* Code HEX un peu plus petit dans la grille 4x4 (cases plus petites) */
+.grille--4x4 .case__hex {
+  left: 8px;
+  bottom: 8px;
+  font-size: 0.8rem;
 }
 
 /* ---------- 9. Barre HUE ---------- */
@@ -439,6 +492,16 @@ body {
     left: 8px;
     bottom: 6px;
     font-size: 0.75rem;
+  }
+
+  .grille--4x4 {
+    gap: 6px;
+  }
+
+  .grille--4x4 .case__hex {
+    left: 5px;
+    bottom: 5px;
+    font-size: 0.6rem;
   }
 
   .hue {

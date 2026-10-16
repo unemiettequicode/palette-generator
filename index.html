@@ -47,11 +47,18 @@
          (le placement est fait dans style.css, section "Grand écran") -->
     <div class="espace-de-travail">
 
-      <!-- ========== PALETTE 3x3 ========== -->
+      <!-- ========== PALETTE (3x3 ou 4x4) ========== -->
       <section class="bloc bloc--palette" aria-labelledby="titre-palette">
         <div class="bloc__entete">
           <h2 class="bloc__titre" id="titre-palette">Mystérieux</h2>
-          <button class="bouton" id="bouton-regenerer" type="button">Régénérer</button>
+          <div class="bloc__actions">
+            <!-- Choix du nombre de cases : 3x3 (9 couleurs) ou 4x4 (16 couleurs) -->
+            <div class="choix-grille" id="choix-grille" role="radiogroup" aria-label="Nombre de cases">
+              <button class="choix-grille__option" type="button" role="radio" aria-checked="true" data-cases="9">3×3</button>
+              <button class="choix-grille__option" type="button" role="radio" aria-checked="false" data-cases="16">4×4</button>
+            </div>
+            <button class="bouton" id="bouton-regenerer" type="button">Régénérer</button>
+          </div>
         </div>
 
         <!-- Couleurs factices (références "Mystérieux") en attendant la génération -->

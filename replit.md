@@ -3,9 +3,17 @@
 ## Projet
 
 Mood Colors est un générateur de palettes moodboard statique en HTML, CSS et
-JavaScript vanilla. L'utilisateur saisit une émotion ou une ambiance ; la page
-génère une palette de 9 couleurs avec une barre HUE, un dégradé avec grain et
-des exports PNG, CSS et JSON lorsqu'ils sont présents dans le projet.
+JavaScript vanilla. La palette peut venir de trois sources : une émotion ou une
+ambiance saisie (75 moods, en français et en anglais), une image importée, ou
+une couleur de base choisie sur une roue chromatique (camaïeu, dégradé entre
+deux couleurs ou harmonie). Elle compte 9 couleurs (grille 3×3) ou 16 (grille
+4×4, au choix). La page propose aussi une barre HUE, la retouche de chaque
+couleur avec des barres RGB (bouton « Ajuster »), un dégradé avec grain et des
+exports PNG, CSS et JSON, nommés `mc_` + un nom au choix.
+
+Les fichiers JavaScript (`js/`) sont des objets globaux chargés dans cet ordre :
+`colors`, `moods`, `palette`, `gradient`, `export`, `image`, `couleurBase`,
+`selecteur`, `app`. Voir `README.md` pour le détail de chacun.
 
 ## Stack à conserver
 
@@ -21,7 +29,11 @@ des exports PNG, CSS et JSON lorsqu'ils sont présents dans le projet.
 - Le code et les commentaires doivent rester en français.
 - Préférer des fonctions courtes et des noms explicites.
 - Travailler par petites étapes : expliquer, modifier, tester, puis attendre la validation.
+- Pour une nouvelle fonctionnalité : résumer le plan avant de coder et attendre l'accord.
 - Faire un commit en français à chaque étape validée.
+- Une branche `feature_…` par nouvelle fonctionnalité, créée depuis `main`. Fusion
+  dans `main` seulement quand l'utilisateur le demande.
+- Ne jamais toucher à la branche `Moodboard_colors_V0` (la V0 du projet).
 - Ne jamais pousser sur GitHub sans demande explicite de l'utilisateur.
 
 ## Replit

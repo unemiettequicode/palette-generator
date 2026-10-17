@@ -73,6 +73,19 @@ sans dépendance et sans étape de construction (build).
   teinté). Basculer ne change aucune couleur : les 9 premières restent les
   mêmes. Le dégradé utilise toujours les 9 couleurs de base.
 - **Régénérer** : une nouvelle variation du même mood.
+- **Ajuster** (bouton à côté de 3×3 / 4×4) : chaque case affiche 3 barres
+  **rouge, vert, bleu** (0 à 255) pour retoucher sa couleur une par une ; la
+  piste de chaque barre montre l'effet du canal. Le dégradé et les exports
+  (PNG, CSS, JSON) tiennent compte des retouches. Pendant l'ajustement, un
+  clic sur une case ne copie pas le HEX.
+  - Les retouches suivent la barre Teinte, et reviennent exactement à ce qu'on
+    a réglé quand on la remet à 0.
+  - Pour un mood, une image ou une harmonie, une retouche sur l'une des 9
+    premières cases se voit en 3×3 comme en 4×4. Pour un camaïeu ou un
+    dégradé, le 3×3 et le 4×4 sont deux palettes différentes : la retouche
+    reste dans celle où elle a été faite.
+  - Régénérer, un autre mood, une image ou un geste sur « Partir d'une
+    couleur » calculent une palette neuve et effacent les retouches.
 - **Barre Teinte** : fait tourner la teinte de toutes les couleurs affichées d'un bloc
   (de -180° à +180°), toujours à partir de la palette de base.
 - **Dégradé mesh avec grain** (canvas 2D), avec un curseur d'intensité du grain.

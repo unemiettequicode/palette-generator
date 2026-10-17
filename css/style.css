@@ -531,6 +531,82 @@ body {
   letter-spacing: 0.03em;
 }
 
+/* Bouton « Ajuster » enfoncé */
+#bouton-ajuster[aria-pressed="true"] {
+  background: var(--texte);
+  border-color: var(--texte);
+  color: var(--fond);
+}
+
+/* Case en mode « Ajuster » : le HEX en haut, 3 barres (rouge, vert, bleu) en bas */
+.case--ajustable {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  aspect-ratio: auto;
+  min-height: 150px;
+  padding: 12px;
+  cursor: default;
+}
+
+.case--ajustable:hover {
+  transform: none;
+}
+
+.case--ajustable .case__hex {
+  position: static;
+}
+
+.case__barres {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+/* Une barre : sa piste va de « canal à 0 » à « canal à 255 » (couleur posée par le JS) */
+.case__barre {
+  width: 100%;
+  height: 12px;
+  margin: 0;
+  border-radius: 6px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--piste, #888);
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.75), 0 0 0 2.5px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+}
+
+.case__barre::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.55), 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+
+.case__barre::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.55), 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+
+.case__barre:focus-visible {
+  outline: 3px solid var(--texte);
+  outline-offset: 3px;
+}
+
+.grille--4x4 .case--ajustable {
+  min-height: 128px;
+  padding: 9px;
+  gap: 6px;
+}
+
 /* Code HEX un peu plus petit dans la grille 4x4 (cases plus petites) */
 .grille--4x4 .case__hex {
   left: 8px;
@@ -778,6 +854,30 @@ body {
     left: 5px;
     bottom: 5px;
     font-size: 0.6rem;
+  }
+
+  .grille--4x4 .case--ajustable {
+    min-height: 96px;
+    padding: 6px;
+    gap: 4px;
+  }
+
+  .grille--4x4 .case--ajustable .case__hex {
+    font-size: 0.55rem;
+  }
+
+  .grille--4x4 .case__barres {
+    gap: 5px;
+  }
+
+  .grille--4x4 .case__barre {
+    height: 9px;
+  }
+
+  .grille--4x4 .case__barre::-webkit-slider-thumb {
+    width: 14px;
+    height: 14px;
+    border-width: 2px;
   }
 
   .hue {
